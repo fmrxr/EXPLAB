@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>EXPLAB — Member Profile</title>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Courier+Prime:wght@400;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --or:#eb6503;--or2:#ff7a1a;--blk:#0d0d0d;--off:#161616;--off2:#1e1e1e;
+  --grn:#3feb03;--muted:#8a8a8a;--light:#c0bdb8;--white:#f0ede8;
+  --border:rgba(235,101,3,0.2);--border2:rgba(235,101,3,0.4);
+  --inp:rgba(235,101,3,0.06);--radius:3px;
+}
+html,body{min-height:100vh;background:var(--blk);color:var(--white);font-family:'Space Grotesk',sans-serif;overflow-x:hidden}
+
+/* ── NOISE TEXTURE ── */
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.03;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:200px 200px;}
+
+/* ── HEADER ── */
+.hdr{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(13,13,13,.92);
+  backdrop-filter:blur(12px);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;padding:.75rem 1.25rem;}
+.hdr-logo{font-size:15px;font-weight:700;letter-spacing:-.01em;color:var(--or)}
+.hdr-step{font-family:'Courier Prime',monospace;font-size:10px;color:var(--muted);letter-spacing:.12em}
+
+/* ── PROGRESS BAR ── */
+.prog-bar{position:fixed;top:52px;left:0;right:0;z-index:99;height:2px;background:rgba(255,255,255,.06)}
+.prog-fill{height:100%;background:var(--or);transition:width .4s cubic-bezier(.4,0,.2,1)}
+
+/* ── MAIN ── */
+main{padding-top:72px;min-height:100vh;position:relative;z-index:1}
+.step{display:none;animation:fadeUp .35s ease forwards}
+.step.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── STEP WRAPPER ── */
+.step-wrap{max-width:520px;margin:0 auto;padding:1.5rem 1.25rem 6rem}
+
+/* ── STEP HEADER ── */
+.step-eyebrow{font-family:'Courier Prime',monospace;font-size:10px;color:rgba(235,101,3,.5);
+  letter-spacing:.2em;text-transform:uppercase;margin-bottom:.4rem}
+.step-title{font-size:24px;font-weight:700;letter-spacing:-.02em;color:var(--white);margin-bottom:.3rem;line-height:1.15}
+.step-sub{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:2rem}
+
+/* ── FIELD ── */
+.field{margin-bottom:1.5rem}
+.field-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+  color:rgba(235,101,3,.6);margin-bottom:.4rem;display:block}
+.field-hint{font-size:12px;color:var(--muted);margin-bottom:.5rem;line-height:1.5}
+
+input[type=text],input[type=email],input[type=url],textarea,select{
+  width:100%;background:var(--inp);border:1px solid var(--border);color:var(--white);
+  font-family:'Courier Prime',monospace;font-size:14px;padding:.75rem .875rem;
+  outline:none;border-radius:var(--radius);transition:border-color .2s,background .2s;appearance:none}
+input:focus,textarea:focus,select:focus{border-color:var(--border2);background:rgba(235,101,3,.1)}
+input::placeholder,textarea::placeholder{color:rgba(255,255,255,.2);font-style:italic}
+textarea{min-height:80px;resize:vertical;line-height:1.6}
+select option{background:#1e1e1e;color:var(--white)}
+
+/* ── RANGE ── */
+.range-wrap{padding:.5rem 0}
+input[type=range]{width:100%;-webkit-appearance:none;height:3px;background:rgba(255,255,255,.1);
+  border-radius:0;outline:none;border:none;padding:0}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;
+  background:var(--or);border-radius:0;cursor:pointer;transform:rotate(45deg)}
+input[type=range]::-moz-range-thumb{width:18px;height:18px;background:var(--or);
+  border:none;border-radius:0;cursor:pointer;transform:rotate(45deg)}
+.range-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);
+  margin-top:.4rem;letter-spacing:.05em}
+
+/* ── TAGS / TOGGLE CHIPS ── */
+.chip-grid{display:flex;flex-wrap:wrap;gap:.5rem}
+.chip{padding:.4rem .875rem;border:1px solid var(--border);background:transparent;
+  color:var(--muted);font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:500;
+  cursor:pointer;border-radius:var(--radius);transition:all .15s;user-select:none;text-align:center}
+.chip:hover{border-color:var(--border2);color:var(--light)}
+.chip.on{background:var(--or);border-color:var(--or);color:var(--blk)}
+.chip-lg{padding:.55rem 1rem;font-size:13px}
+
+/* ── SKILL ROWS ── */
+.skill-row{background:var(--off);border:1px solid var(--border);padding:.875rem 1rem;
+  margin-bottom:.5rem;border-radius:var(--radius)}
+.skill-row-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem}
+.skill-name{font-size:13px;font-weight:500;color:var(--white)}
+.skill-level{font-family:'Courier Prime',monospace;font-size:11px;color:var(--or);min-width:70px;text-align:right}
+.level-dots{display:flex;gap:4px;margin-top:.3rem}
+.level-dot{width:20px;height:4px;background:rgba(255,255,255,.1);cursor:pointer;border-radius:0;transition:background .15s}
+.level-dot.lit{background:var(--or)}
+
+/* ── CUSTOM SKILL ADD ── */
+.add-skill-row{display:flex;gap:.5rem;margin-top:.75rem}
+.add-skill-row input{flex:1}
+.btn-add{background:transparent;border:1px solid var(--border);color:var(--or);
+  font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:700;letter-spacing:.06em;
+  text-transform:uppercase;padding:.75rem 1rem;cursor:pointer;border-radius:var(--radius);
+  white-space:nowrap;transition:all .15s}
+.btn-add:hover{background:rgba(235,101,3,.1);border-color:var(--border2)}
+
+/* ── SECTION DIVIDER ── */
+.sdiv{margin:1.5rem 0 1rem;font-size:10px;text-transform:uppercase;letter-spacing:.18em;
+  color:rgba(235,101,3,.4);display:flex;align-items:center;gap:.75rem}
+.sdiv::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ── AVAIL GRID ── */
+.avail-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+.avail-card{background:var(--off);border:1px solid var(--border);padding:.875rem;
+  cursor:pointer;border-radius:var(--radius);transition:all .15s;text-align:center}
+.avail-card:hover{border-color:var(--border2)}
+.avail-card.on{border-color:var(--or);background:rgba(235,101,3,.08)}
+.avail-card .ac-icon{font-size:20px;margin-bottom:.3rem}
+.avail-card .ac-label{font-size:12px;font-weight:600;color:var(--white);margin-bottom:2px}
+.avail-card .ac-sub{font-size:11px;color:var(--muted)}
+
+/* ── NAV BUTTONS ── */
+.nav-bar{position:fixed;bottom:0;left:0;right:0;z-index:100;
+  background:rgba(13,13,13,.95);backdrop-filter:blur(12px);
+  border-top:1px solid var(--border);padding:1rem 1.25rem;
+  display:flex;gap:.75rem;max-width:520px;margin:0 auto;left:50%;transform:translateX(-50%);
+  width:100%}
+.btn-back{flex:0 0 auto;background:transparent;border:1px solid var(--border);
+  color:var(--muted);font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;padding:.875rem 1.25rem;cursor:pointer;
+  border-radius:var(--radius);transition:all .15s}
+.btn-back:hover{border-color:var(--border2);color:var(--light)}
+.btn-next{flex:1;background:var(--or);border:none;color:var(--blk);
+  font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;padding:.875rem;cursor:pointer;
+  border-radius:var(--radius);transition:background .15s}
+.btn-next:hover{background:var(--or2)}
+.btn-next:disabled{background:rgba(235,101,3,.3);cursor:not-allowed}
+
+/* ── DONE SCREEN ── */
+.done-screen{text-align:center;padding:3rem 1.25rem 6rem}
+.done-sym{font-size:48px;margin-bottom:1.5rem;display:block}
+.done-title{font-size:28px;font-weight:700;letter-spacing:-.02em;margin-bottom:.75rem}
+.done-sub{font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:2.5rem;max-width:340px;margin-left:auto;margin-right:auto}
+.card-preview{background:var(--off);border:1px solid var(--border);padding:1.5rem;
+  border-radius:var(--radius);text-align:left;margin-bottom:2rem;max-width:400px;margin-left:auto;margin-right:auto}
+.card-preview-name{font-size:20px;font-weight:700;color:var(--or);margin-bottom:.25rem}
+.card-preview-role{font-size:13px;color:var(--muted);margin-bottom:1rem}
+.card-tags{display:flex;flex-wrap:wrap;gap:.4rem}
+.card-tag{font-size:11px;padding:2px 8px;background:rgba(235,101,3,.12);
+  border:1px solid var(--border);color:var(--or);border-radius:var(--radius)}
+.btn-export{display:inline-flex;align-items:center;gap:.5rem;background:var(--or);
+  color:var(--blk);font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;padding:1rem 2rem;cursor:pointer;
+  border:none;border-radius:var(--radius);transition:background .15s;width:100%;justify-content:center;max-width:400px}
+.btn-export:hover{background:var(--or2)}
+.share-note{font-size:12px;color:var(--muted);margin-top:1rem;max-width:340px;margin-left:auto;margin-right:auto;line-height:1.6}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="hdr">
+  <div class="hdr-logo">EXP<span style="opacity:.5">LAB</span></div>
+  <div class="hdr-step" id="hdrStep">STEP 1 / 8</div>
+</header>
+<div class="prog-bar"><div class="prog-fill" id="progFill" style="width:12.5%"></div></div>
+
+<main>
+
+<!-- ═══ STEP 1: IDENTITY ═══ -->
+<div class="step active" id="s1">
+<div class="step-wrap">
+  <div class="step-eyebrow">01 / identity</div>
+  <div class="step-title">Who are you?</div>
+  <div class="step-sub">Your profile is visible to the EXPLAB community in Tunis. Fill in what you're comfortable sharing.</div>
+
+  <div class="field">
+    <label class="field-label">Name or alias *</label>
+    <input type="text" id="name" placeholder="Your name or how you go by…" required>
+  </div>
+  <div class="field">
+    <label class="field-label">Email (organizers only)</label>
+    <input type="email" id="email" placeholder="your@email.com">
+  </div>
+  <div class="field">
+    <label class="field-label">Instagram / online handle</label>
+    <input type="text" id="handle" placeholder="@yourhandle">
+  </div>
+  <div class="field">
+    <label class="field-label">Neighbourhood / area in Tunis</label>
+    <div class="chip-grid" id="zoneGrid">
+      <div class="chip" onclick="toggleChip(this,'zone')">Centre-ville</div>
+      <div class="chip" onclick="toggleChip(this,'zone')">La Marsa</div>
+      <div class="chip" onclick="toggleChip(this,'zone')">Ariana</div>
+      <div class="chip" onclick="toggleChip(this,'zone')">Ben Arous</div>
+      <div class="chip" onclick="toggleChip(this,'zone')">Manouba</div>
+      <div class="chip" onclick="toggleChip(this,'zone')">Banlieue Nord</div>
+      <div class="chip" onclick="toggleChip(this,'zone')">Banlieue Sud</div>
+      <div class="chip" onclick="toggleChip(this,'zone')">Outside Tunis</div>
+    </div>
+  </div>
+  <div class="field">
+    <label class="field-label">One line about yourself</label>
+    <input type="text" id="bio" placeholder="e.g. sound designer + visual coder, exploring feedback systems">
+  </div>
+</div>
+</div>
+
+<!-- ═══ STEP 2: DISCIPLINE ═══ -->
+<div class="step" id="s2">
+<div class="step-wrap">
+  <div class="step-eyebrow">02 / discipline</div>
+  <div class="step-title">What's your creative field?</div>
+  <div class="step-sub">Select all that apply. This maps the community's creative landscape.</div>
+
+  <div class="field">
+    <label class="field-label">Primary disciplines</label>
+    <div class="chip-grid" id="discGrid">
+      <div class="chip chip-lg" onclick="toggleChip(this,'disc')">Visual Art</div>
+      <div class="chip chip-lg" onclick="toggleChip(this,'disc')">Music / Sound</div>
+      <div class="chip chip-lg" onclick="toggleChip(this,'disc')">Interaction Design</div>
+      <div class="chip chip-lg" onclick="toggleChip(this,'disc')">Graphic Design</div>
+      <div class="chip chip-lg" onclick="toggleChip(this,'disc')">Performance / Theatre</div>
+      <div class="chip chip-lg" onclick="toggleChip(this,'disc')">Film / Video</div>
+      <div class="chip chip-lg" onclick="toggleChip(this,'disc')">Architecture / Space</div>
+      <div class="chip chip-lg" onclick="toggleChip(this,'disc')">Engineering / Electronics</div>
+      <div class="chip chip-lg" onclick="toggleChip(this,'disc')">Programming / Dev</div>
+      <div class="chip chip-lg" onclick="toggleChip(this,'disc')">New Media Art</div>
+      <div class="chip chip-lg" onclick="toggleChip(this,'disc')">Research / Theory</div>
+      <div class="chip chip-lg" onclick="toggleChip(this,'disc')">Education / Pedagogy</div>
+      <div class="chip chip-lg" onclick="toggleChip(this,'disc')">Photography</div>
+      <div class="chip chip-lg" onclick="toggleChip(this,'disc')">Illustration</div>
+      <div class="chip chip-lg" onclick="toggleChip(this,'disc')">Game Design</div>
+    </div>
+  </div>
+  <div class="field">
+    <label class="field-label">Other / more specific</label>
+    <input type="text" id="discOther" placeholder="e.g. generative typography, bioacoustics…">
+  </div>
+  <div class="field">
+    <label class="field-label">Experience level</label>
+    <div class="avail-grid">
+      <div class="avail-card" onclick="selectOne(this,'exp')">
+        <div class="ac-icon">○</div>
+        <div class="ac-label">Learning</div>
+        <div class="ac-sub">Exploring & building skills</div>
+      </div>
+      <div class="avail-card" onclick="selectOne(this,'exp')">
+        <div class="ac-icon">◐</div>
+        <div class="ac-label">Intermediate</div>
+        <div class="ac-sub">Have done projects</div>
+      </div>
+      <div class="avail-card" onclick="selectOne(this,'exp')">
+        <div class="ac-icon">●</div>
+        <div class="ac-label">Experienced</div>
+        <div class="ac-sub">Regular practice</div>
+      </div>
+      <div class="avail-card" onclick="selectOne(this,'exp')">
+        <div class="ac-icon">◈</div>
+        <div class="ac-label">Expert</div>
+        <div class="ac-sub">Could teach others</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══ STEP 3: SOFTWARE TOOLS ═══ -->
+<div class="step" id="s3">
+<div class="step-wrap">
+  <div class="step-eyebrow">03 / software & tools</div>
+  <div class="step-title">What software do you use?</div>
+  <div class="step-sub">Tap a tool to mark it. Use the dots to rate your level: 1 = aware, 5 = fluent.</div>
+
+  <div class="sdiv">Visual & creative coding</div>
+  <div id="skillsViz"></div>
+
+  <div class="sdiv">Audio & music</div>
+  <div id="skillsAudio"></div>
+
+  <div class="sdiv">Design & production</div>
+  <div id="skillsDesign"></div>
+
+  <div class="sdiv">Programming languages</div>
+  <div id="skillsCode"></div>
+
+  <div class="sdiv">Other software</div>
+  <div id="skillsOther"></div>
+
+  <div class="add-skill-row">
+    <input type="text" id="customSoftware" placeholder="Add a tool not listed…">
+    <button class="btn-add" onclick="addCustomSkill('customSoftware','skillsOther')">+ Add</button>
+  </div>
+</div>
+</div>
+
+<!-- ═══ STEP 4: HARDWARE & SENSORS ═══ -->
+<div class="step" id="s4">
+<div class="step-wrap">
+  <div class="step-eyebrow">04 / hardware & sensors</div>
+  <div class="step-title">What hardware do you work with?</div>
+  <div class="step-sub">Select everything you've used or own — including sensors, microcontrollers, AV gear, and instruments.</div>
+
+  <div class="sdiv">Microcontrollers & SBCs</div>
+  <div class="chip-grid" id="hwMicro">
+    <div class="chip" onclick="toggleChip(this,'hw')">Arduino</div>
+    <div class="chip" onclick="toggleChip(this,'hw')">Raspberry Pi</div>
+    <div class="chip" onclick="toggleChip(this,'hw')">ESP32/8266</div>
+    <div class="chip" onclick="toggleChip(this,'hw')">Teensy</div>
+    <div class="chip" onclick="toggleChip(this,'hw')">Jetson Nano</div>
+    <div class="chip" onclick="toggleChip(this,'hw')">Bela</div>
+    <div class="chip" onclick="toggleChip(this,'hw')">STM32</div>
+  </div>
+
+  <div class="sdiv">Sensors & input</div>
+  <div class="chip-grid" id="hwSensors">
+    <div class="chip" onclick="toggleChip(this,'hw')">Kinect / Depth cam</div>
+    <div class="chip" onclick="toggleChip(this,'hw')">LiDAR</div>
+    <div class="chip" onclick="toggleChip(this,'hw')">Ultrasonic</div>
+    <div class="chip" onclick="toggleChip(this,'hw')">IR sensors</div>
+    <div class="chip" onclick="toggleChip(this,'hw')">CV Camera</div>
+    <div class="chip" onclick="toggleChip(this,'hw')">EEG / biosensors</div>
+    <div class="chip" onclick="toggleChip(this,'hw')">Pressure / FSR</div>
+    <div class="chip" onclick="toggleChip(this,'hw')">Accelerometer / IMU</div>
+    <div class="chip" onclick="toggleChip(this,'hw')">Flex sensors</div>
+    <div class="chip" onclick="toggleChip(this,'hw')">Laser / DMX</div>
+    <div class="chip" onclick="toggleChip(this,'hw')">MIDI controllers</div>
+    <div class="chip" onclick="toggleChip(this,'hw')">OSC / DMX</div>
+  </div>
+
+  <div class="sdiv">Output & display</div>
+  <div class="chip-grid" id="hwOutput">
+    <div class="chip" onclick="toggleChip(this,'hw')">LED strips (NeoPixel etc)</div>
+    <div class="chip" onclick="toggleChip(this,'hw')">Projector mapping</div>
+    <div class="chip" onclick="toggleChip(this,'hw')">LED matrix</div>
+    <div class="chip" onclick="toggleChip(this,'hw')">Servo / motors</div>
+    <div class="chip" onclick="toggleChip(this,'hw')">Stepper motors</div>
+    <div class="chip" onclick="toggleChip(this,'hw')">3D printer</div>
+    <div class="chip" onclick="toggleChip(this,'hw')">Laser cutter</div>
+    <div class="chip" onclick="toggleChip(this,'hw')">Plotter</div>
+  </div>
+
+  <div class="sdiv">AV & studio</div>
+  <div class="chip-grid" id="hwAV">
+    <div class="chip" onclick="toggleChip(this,'hw')">Audio interface</div>
+    <div class="chip" onclick="toggleChip(this,'hw')">Synthesizer</div>
+    <div class="chip" onclick="toggleChip(this,'hw')">Modular synth</div>
+    <div class="chip" onclick="toggleChip(this,'hw')">Video mixer</div>
+    <div class="chip" onclick="toggleChip(this,'hw')">DJ equipment</div>
+    <div class="chip" onclick="toggleChip(this,'hw')">Camera (photo/video)</div>
+    <div class="chip" onclick="toggleChip(this,'hw')">Scanner / digitizer</div>
+  </div>
+
+  <div class="add-skill-row" style="margin-top:1rem">
+    <input type="text" id="customHW" placeholder="Add hardware not listed…">
+    <button class="btn-add" onclick="addHWChip()">+ Add</button>
+  </div>
+
+  <div class="field" style="margin-top:1.5rem">
+    <label class="field-label">Hardware you own and could bring to workshops</label>
+    <textarea id="hwOwned" placeholder="e.g. I own a Kinect v2, Arduino Mega, and a modular synth setup I can share…"></textarea>
+  </div>
+</div>
+</div>
+
+<!-- ═══ STEP 5: AVAILABILITY ═══ -->
+<div class="step" id="s5">
+<div class="step-wrap">
+  <div class="step-eyebrow">05 / availability</div>
+  <div class="step-title">How do you show up?</div>
+  <div class="step-sub">This helps us understand the community's capacity for collaboration and events.</div>
+
+  <div class="field">
+    <label class="field-label">How often can you attend gatherings?</label>
+    <div class="avail-grid">
+      <div class="avail-card" onclick="selectOne(this,'freq')">
+        <div class="ac-icon">◈</div>
+        <div class="ac-label">Every one</div>
+        <div class="ac-sub">Core member</div>
+      </div>
+      <div class="avail-card" onclick="selectOne(this,'freq')">
+        <div class="ac-icon">●</div>
+        <div class="ac-label">Most of them</div>
+        <div class="ac-sub">~3 out of 4</div>
+      </div>
+      <div class="avail-card" onclick="selectOne(this,'freq')">
+        <div class="ac-icon">◐</div>
+        <div class="ac-label">Occasionally</div>
+        <div class="ac-sub">When I can</div>
+      </div>
+      <div class="avail-card" onclick="selectOne(this,'freq')">
+        <div class="ac-icon">○</div>
+        <div class="ac-label">Lurker for now</div>
+        <div class="ac-sub">Following along</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="field">
+    <label class="field-label">Best days for you</label>
+    <div class="chip-grid" id="daysGrid">
+      <div class="chip" onclick="toggleChip(this,'days')">Mon</div>
+      <div class="chip" onclick="toggleChip(this,'days')">Tue</div>
+      <div class="chip" onclick="toggleChip(this,'days')">Wed</div>
+      <div class="chip" onclick="toggleChip(this,'days')">Thu</div>
+      <div class="chip" onclick="toggleChip(this,'days')">Fri</div>
+      <div class="chip" onclick="toggleChip(this,'days')">Sat</div>
+      <div class="chip" onclick="toggleChip(this,'days')">Sun</div>
+    </div>
+  </div>
+
+  <div class="field">
+    <label class="field-label">Best time of day</label>
+    <div class="chip-grid" id="timeGrid">
+      <div class="chip" onclick="toggleChip(this,'time')">Morning</div>
+      <div class="chip" onclick="toggleChip(this,'time')">Afternoon</div>
+      <div class="chip" onclick="toggleChip(this,'time')">Evening</div>
+      <div class="chip" onclick="toggleChip(this,'time')">Late night</div>
+    </div>
+  </div>
+
+  <div class="field">
+    <label class="field-label">Commitment level</label>
+    <div class="range-wrap">
+      <input type="range" id="commitSlider" min="1" max="5" value="3" oninput="updateCommit(this.value)">
+      <div class="range-labels">
+        <span>Just curious</span>
+        <span id="commitVal" style="color:var(--or);font-weight:700">Contributor</span>
+        <span>All in</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="field">
+    <label class="field-label">Can you contribute to organizing?</label>
+    <div class="chip-grid" id="orgGrid">
+      <div class="chip" onclick="toggleChip(this,'org')">Facilitate workshops</div>
+      <div class="chip" onclick="toggleChip(this,'org')">Help with events</div>
+      <div class="chip" onclick="toggleChip(this,'org')">Design / comms</div>
+      <div class="chip" onclick="toggleChip(this,'org')">Tech setup</div>
+      <div class="chip" onclick="toggleChip(this,'org')">Documentation</div>
+      <div class="chip" onclick="toggleChip(this,'org')">Not right now</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══ STEP 6: PROJECTS & INTERESTS ═══ -->
+<div class="step" id="s6">
+<div class="step-wrap">
+  <div class="step-eyebrow">06 / projects & interests</div>
+  <div class="step-title">What do you want to make?</div>
+  <div class="step-sub">This drives our workshop and project planning. No idea is too vague.</div>
+
+  <div class="field">
+    <label class="field-label">Project themes you're drawn to</label>
+    <div class="chip-grid" id="themGrid">
+      <div class="chip" onclick="toggleChip(this,'them')">Generative visuals</div>
+      <div class="chip" onclick="toggleChip(this,'them')">Live A/V performance</div>
+      <div class="chip" onclick="toggleChip(this,'them')">Interactive installations</div>
+      <div class="chip" onclick="toggleChip(this,'them')">Data visualization</div>
+      <div class="chip" onclick="toggleChip(this,'them')">Physical computing</div>
+      <div class="chip" onclick="toggleChip(this,'them')">Machine learning / AI</div>
+      <div class="chip" onclick="toggleChip(this,'them')">Wearables</div>
+      <div class="chip" onclick="toggleChip(this,'them')">Sound synthesis</div>
+      <div class="chip" onclick="toggleChip(this,'them')">Net art</div>
+      <div class="chip" onclick="toggleChip(this,'them')">Game / XR</div>
+      <div class="chip" onclick="toggleChip(this,'them')">Bio / ecology</div>
+      <div class="chip" onclick="toggleChip(this,'them')">Archival / heritage</div>
+      <div class="chip" onclick="toggleChip(this,'them')">Community tools</div>
+      <div class="chip" onclick="toggleChip(this,'them')">Experimental music</div>
+      <div class="chip" onclick="toggleChip(this,'them')">Robotics / mechatronics</div>
+      <div class="chip" onclick="toggleChip(this,'them')">Textiles / craft</div>
+    </div>
+  </div>
+
+  <div class="field">
+    <label class="field-label">A project idea you've been thinking about</label>
+    <textarea id="projIdea" placeholder="Describe something you want to build or explore — even if it's just a seed…" rows="4"></textarea>
+  </div>
+
+  <div class="field">
+    <label class="field-label">What do you want to learn at EXPLAB?</label>
+    <textarea id="toLearn" placeholder="e.g. TouchDesigner basics, how to work with sensors, live coding…" rows="3"></textarea>
+  </div>
+
+  <div class="field">
+    <label class="field-label">What can you teach or share?</label>
+    <textarea id="toTeach" placeholder="e.g. I can run a workshop on Ableton + Max4Live, intro to Blender…" rows="3"></textarea>
+  </div>
+</div>
+</div>
+
+<!-- ═══ STEP 7: COLLABORATION ═══ -->
+<div class="step" id="s7">
+<div class="step-wrap">
+  <div class="step-eyebrow">07 / collaboration</div>
+  <div class="step-title">How do you collaborate?</div>
+  <div class="step-sub">Honest answers here help us match you with the right people and projects.</div>
+
+  <div class="field">
+    <label class="field-label">Collaboration appetite</label>
+    <div class="avail-grid">
+      <div class="avail-card" onclick="selectOne(this,'collab')">
+        <div class="ac-icon">◈</div>
+        <div class="ac-label">Actively seeking</div>
+        <div class="ac-sub">Looking for project partners now</div>
+      </div>
+      <div class="avail-card" onclick="selectOne(this,'collab')">
+        <div class="ac-icon">●</div>
+        <div class="ac-label">Open to it</div>
+        <div class="ac-sub">If the right project comes</div>
+      </div>
+      <div class="avail-card" onclick="selectOne(this,'collab')">
+        <div class="ac-icon">◐</div>
+        <div class="ac-label">Solo for now</div>
+        <div class="ac-sub">Working on my own stuff</div>
+      </div>
+      <div class="avail-card" onclick="selectOne(this,'collab')">
+        <div class="ac-icon">○</div>
+        <div class="ac-label">Just watching</div>
+        <div class="ac-sub">Here to learn and see</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="field">
+    <label class="field-label">What roles do you usually take?</label>
+    <div class="chip-grid" id="roleGrid">
+      <div class="chip" onclick="toggleChip(this,'role')">Technical lead</div>
+      <div class="chip" onclick="toggleChip(this,'role')">Concept / direction</div>
+      <div class="chip" onclick="toggleChip(this,'role')">Visual / aesthetic</div>
+      <div class="chip" onclick="toggleChip(this,'role')">Sound / music</div>
+      <div class="chip" onclick="toggleChip(this,'role')">Hardware / fabrication</div>
+      <div class="chip" onclick="toggleChip(this,'role')">Research / writing</div>
+      <div class="chip" onclick="toggleChip(this,'role')">Project coordination</div>
+      <div class="chip" onclick="toggleChip(this,'role')">Documentation</div>
+      <div class="chip" onclick="toggleChip(this,'role')">Testing / feedback</div>
+    </div>
+  </div>
+
+  <div class="field">
+    <label class="field-label">Skills you're looking for in collaborators</label>
+    <textarea id="lookingFor" placeholder="e.g. Someone who knows electronics to help with a sensor project…" rows="3"></textarea>
+  </div>
+
+  <div class="field">
+    <label class="field-label">Preferred collaboration format</label>
+    <div class="chip-grid" id="fmtGrid">
+      <div class="chip" onclick="toggleChip(this,'fmt')">Short sprints</div>
+      <div class="chip" onclick="toggleChip(this,'fmt')">Long-term project</div>
+      <div class="chip" onclick="toggleChip(this,'fmt')">Workshop / jam session</div>
+      <div class="chip" onclick="toggleChip(this,'fmt')">Online / async</div>
+      <div class="chip" onclick="toggleChip(this,'fmt')">In-person only</div>
+      <div class="chip" onclick="toggleChip(this,'fmt')">Performance / show</div>
+      <div class="chip" onclick="toggleChip(this,'fmt')">Residency</div>
+    </div>
+  </div>
+
+  <div class="field">
+    <label class="field-label">Anything else you want the community to know?</label>
+    <textarea id="freeText" placeholder="Links, context, questions, what you hope EXPLAB becomes…" rows="4"></textarea>
+  </div>
+</div>
+</div>
+
+<!-- ═══ STEP 8: DONE ═══ -->
+<div class="step" id="s8">
+<div class="step-wrap done-screen">
+  <span class="done-sym">◈</span>
+  <div class="done-title">Profile complete.</div>
+  <div class="done-sub">Your member card is being sent automatically to the EXPLAB team. You can also download a copy for your records.</div>
+  <div class="card-preview" id="cardPreview"></div>
+
+  <!-- Email send status -->
+  <div id="emailStatus" style="margin-bottom:1.5rem;max-width:400px;width:100%;text-align:center">
+    <div id="emailSending" style="display:none;padding:1rem;background:rgba(235,101,3,0.1);border:1px solid var(--border);font-size:13px;color:var(--muted)">
+      ⟳ Sending to explab.tn@gmail.com…
+    </div>
+    <div id="emailOk" style="display:none;padding:1rem;background:rgba(63,235,3,0.08);border:1px solid rgba(63,235,3,0.3);font-size:13px;color:var(--grn)">
+      ✓ Sent to explab.tn@gmail.com
+    </div>
+    <div id="emailErr" style="display:none;padding:1rem;background:rgba(220,50,50,0.08);border:1px solid rgba(220,50,50,0.3);font-size:13px;color:#e74">
+      ✗ Could not send automatically — please download and share the file manually.
+    </div>
+  </div>
+
+  <button class="btn-export" onclick="exportJSON()" style="margin-bottom:.75rem">↓ Download Member Card (.json)</button>
+  <div class="share-note">Your profile has been sent to EXPLAB. Bring the downloaded file as a backup to the gathering.</div>
+</div>
+</div>
+
+</main>
+
+<!-- NAV -->
+<div class="nav-bar" id="navBar">
+  <button class="btn-back" id="btnBack" onclick="goBack()" style="display:none">← Back</button>
+  <button class="btn-next" id="btnNext" onclick="goNext()">Continue →</button>
+</div>
+
+<script>
+// ── STATE ──────────────────────────────────────────
+const TOTAL = 8;
+let cur = 1;
+const data = {
+  meta:{version:'1.0',created:new Date().toISOString(),source:'EXPLAB Member Form'},
+  identity:{},discipline:{},software:{},hardware:{},availability:{},projects:{},collaboration:{}
+};
+
+// ── EMAILJS CONFIG ─────────────────────────────────
+// EmailJS public key & IDs — uses a free EmailJS account
+// Template sends JSON as email body to explab.tn@gmail.com
+const EJS_PUBLIC_KEY  = 'iJI95atBsh6B4S1p1';   // ← replace after setup
+const EJS_SERVICE_ID  = 'explab-cards';            // ← replace after setup
+const EJS_TEMPLATE_ID = 'template_uktnxe9';           // ← replace after setup
+const TARGET_EMAIL    = 'explab.tn@gmail.com';
+
+function initEmailJS(){
+  try{ emailjs.init({publicKey: EJS_PUBLIC_KEY}); }
+  catch(e){ console.warn('EmailJS not loaded',e); }
+}
+
+function createDownloadLink(jsonStr) {
+  const blob = new Blob([jsonStr], { type: 'application/json' });
+  return URL.createObjectURL(blob);
+}
+async function sendEmail(jsonStr, memberName){
+  document.getElementById('emailSending').style.display='block';
+  document.getElementById('emailOk').style.display='none';
+  document.getElementById('emailErr').style.display='none';
+
+  try {
+    await emailjs.send(EJS_SERVICE_ID, EJS_TEMPLATE_ID, {
+      to_email: TARGET_EMAIL,
+      from_name: memberName || 'EXPLAB Member',
+      member_name: memberName || 'Anonymous',
+
+      // ✅ JSON envoyé proprement
+      json_data: jsonStr,
+
+      // ✅ petit résumé lisible
+      message: "New EXPLAB member:\\n\\n" + jsonStr.slice(0, 1000),
+
+      submitted_at: new Date().toLocaleString()
+    });
+
+    document.getElementById('emailSending').style.display='none';
+    document.getElementById('emailOk').style.display='block';
+
+  } catch(err){
+    console.error('EmailJS error:', err);
+    document.getElementById('emailSending').style.display='none';
+    document.getElementById('emailErr').style.display='block';
+  }
+}
+// ── STEPS ──────────────────────────────────────────
+function showStep(n){
+  document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
+  document.getElementById('s'+n).classList.add('active');
+  document.getElementById('hdrStep').textContent='STEP '+n+' / '+TOTAL;
+  document.getElementById('progFill').style.width=(n/TOTAL*100)+'%';
+  document.getElementById('btnBack').style.display=n>1?'block':'none';
+  document.getElementById('btnNext').textContent=n===7?'Finish & Generate Card →':n===8?'Done':'Continue →';
+  document.getElementById('navBar').style.display=n===8?'none':'flex';
+  window.scrollTo({top:0,behavior:'smooth'});
+  cur=n;
+}
+
+function goNext(){
+  if(cur===1&&!document.getElementById('name').value.trim()){
+    document.getElementById('name').focus();return;
+  }
+  collectStep(cur);
+  if(cur===7){
+    buildCard();
+    showStep(8);
+    // Auto-send email as soon as step 8 appears
+    const jsonStr = JSON.stringify(data, null, 2);
+    sendEmail(jsonStr, data.identity?.name || 'Anonymous');
+  }
+  else if(cur<TOTAL){showStep(cur+1);}
+}
+
+function goBack(){if(cur>1)showStep(cur-1);}
+
+// ── COLLECT PER STEP ──────────────────────────────
+function collectStep(n){
+  if(n===1){
+    data.identity.name=v('name');data.identity.email=v('email');
+    data.identity.handle=v('handle');data.identity.bio=v('bio');
+    data.identity.zone=getChips('zone');
+  }
+  if(n===2){
+    data.discipline.fields=getChips('disc');
+    data.discipline.other=v('discOther');
+    data.discipline.level=getOne('exp');
+  }
+  if(n===3){
+    data.software=collectSkillRows();
+  }
+  if(n===4){
+    data.hardware.items=getChips('hw');
+    data.hardware.owned=v('hwOwned');
+  }
+  if(n===5){
+    data.availability.frequency=getOne('freq');
+    data.availability.days=getChips('days');
+    data.availability.times=getChips('time');
+    data.availability.commitment=document.getElementById('commitSlider').value;
+    data.availability.commitLabel=commitLabels[document.getElementById('commitSlider').value];
+    data.availability.organising=getChips('org');
+  }
+  if(n===6){
+    data.projects.themes=getChips('them');
+    data.projects.idea=v('projIdea');
+    data.projects.toLearn=v('toLearn');
+    data.projects.toTeach=v('toTeach');
+  }
+  if(n===7){
+    data.collaboration.appetite=getOne('collab');
+    data.collaboration.roles=getChips('role');
+    data.collaboration.lookingFor=v('lookingFor');
+    data.collaboration.formats=getChips('fmt');
+    data.collaboration.freeText=v('freeText');
+  }
+}
+
+function v(id){const el=document.getElementById(id);return el?el.value.trim():'';}
+function getChips(cat){return [...document.querySelectorAll('.chip.on')].filter(c=>c.dataset.cat===cat).map(c=>c.textContent.trim());}
+function getOne(cat){const el=document.querySelector('.avail-card.on[data-cat="'+cat+'"]');return el?el.querySelector('.ac-label').textContent.trim():'';}
+
+// ── CHIP TOGGLE ────────────────────────────────────
+function toggleChip(el,cat){
+  el.dataset.cat=cat;
+  el.classList.toggle('on');
+}
+
+function selectOne(el,cat){
+  document.querySelectorAll('.avail-card[data-cat="'+cat+'"]').forEach(c=>c.classList.remove('on'));
+  el.dataset.cat=cat;
+  el.classList.add('on');
+}
+
+// ── SKILL ROWS ────────────────────────────────────
+const SKILLS={
+  viz:['TouchDesigner','Processing','openFrameworks','VVVV','Notch','Resolume','MadMapper','Millumin','Hydra','Unity','Unreal','Blender'],
+  audio:['Ableton Live','Max/MSP','SuperCollider','Pure Data','Reaktor','Logic Pro','Reaper','VCV Rack','TidalCycles','Sonic Pi'],
+  design:['After Effects','Premiere','DaVinci Resolve','Photoshop','Illustrator','Figma','Cinema 4D','Houdini','ZBrush'],
+  code:['Python','JavaScript','C++','C#','Rust','GLSL / Shaders','p5.js','Three.js','openCV','TensorFlow / PyTorch'],
+  other:[]
+};
+
+const catMap={viz:'skillsViz',audio:'skillsAudio',design:'skillsDesign',code:'skillsCode',other:'skillsOther'};
+const levelLabels=['','Aware','Trying','Comfortable','Fluent','Expert'];
+
+function buildSkillRows(){
+  Object.entries(catMap).forEach(([cat,containerId])=>{
+    const wrap=document.getElementById(containerId);
+    if(!wrap)return;
+    SKILLS[cat].forEach(name=>wrap.appendChild(makeSkillRow(name,cat)));
+  });
+}
+
+function makeSkillRow(name,cat){
+  const row=document.createElement('div');
+  row.className='skill-row';
+  row.dataset.name=name;row.dataset.cat=cat;row.dataset.level='0';
+  row.innerHTML=`
+    <div class="skill-row-top">
+      <div class="skill-name">${name}</div>
+      <div class="skill-level" id="lbl-${name.replace(/[^a-z0-9]/gi,'_')}">— not used</div>
+    </div>
+    <div class="level-dots">
+      ${[1,2,3,4,5].map(i=>`<div class="level-dot" data-i="${i}" onclick="setLevel(this,'${name.replace(/'/g,"\\'")}','${cat}')"></div>`).join('')}
+    </div>`;
+  return row;
+}
+
+function setLevel(dot,name,cat){
+  const row=dot.closest('.skill-row');
+  const lvl=parseInt(dot.dataset.i);
+  row.dataset.level=lvl;
+  row.querySelectorAll('.level-dot').forEach((d,i)=>d.classList.toggle('lit',i<lvl));
+  const key='lbl-'+name.replace(/[^a-z0-9]/gi,'_');
+  const lbl=document.getElementById(key);
+  if(lbl)lbl.textContent=levelLabels[lvl];
+}
+
+function collectSkillRows(){
+  const res={};
+  document.querySelectorAll('.skill-row').forEach(row=>{
+    const lvl=parseInt(row.dataset.level||0);
+    if(lvl>0)res[row.dataset.name]={level:lvl,label:levelLabels[lvl],category:row.dataset.cat};
+  });
+  return res;
+}
+
+function addCustomSkill(inputId,containerId){
+  const inp=document.getElementById(inputId);
+  const name=inp.value.trim();
+  if(!name)return;
+  const wrap=document.getElementById(containerId);
+  wrap.appendChild(makeSkillRow(name,'other'));
+  inp.value='';
+}
+
+function addHWChip(){
+  const inp=document.getElementById('customHW');
+  const name=inp.value.trim();
+  if(!name)return;
+  const chip=document.createElement('div');
+  chip.className='chip';chip.textContent=name;
+  chip.onclick=()=>toggleChip(chip,'hw');
+  document.getElementById('hwAV').appendChild(chip);
+  inp.value='';
+  chip.click();
+}
+
+// ── COMMITMENT SLIDER ─────────────────────────────
+const commitLabels={1:'Just curious',2:'Occasional',3:'Contributor',4:'Active member',5:'Core / all-in'};
+function updateCommit(v){
+  document.getElementById('commitVal').textContent=commitLabels[v];
+}
+
+// ── BUILD CARD ────────────────────────────────────
+function buildCard(){
+  const n=data.identity.name||'Anonymous';
+  const disc=data.discipline.fields.slice(0,3).join(', ')||'—';
+  const sw=Object.keys(data.software).slice(0,6);
+  const hw=data.hardware.items.slice(0,4);
+  const themes=data.projects.themes.slice(0,5);
+  document.getElementById('cardPreview').innerHTML=`
+    <div class="card-preview-name">${n}</div>
+    <div class="card-preview-role">${disc} · ${data.identity.zone[0]||'Tunis'}</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:.75rem;line-height:1.5">${data.identity.bio||''}</div>
+    <div style="font-size:10px;color:rgba(235,101,3,.5);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.4rem">Top tools</div>
+    <div class="card-tags">${sw.map(s=>`<span class="card-tag">${s}</span>`).join('')}</div>
+    ${hw.length?`<div style="font-size:10px;color:rgba(235,101,3,.5);letter-spacing:.1em;text-transform:uppercase;margin:.75rem 0 .4rem">Hardware</div><div class="card-tags">${hw.map(h=>`<span class="card-tag">${h}</span>`).join('')}</div>`:''}
+    ${themes.length?`<div style="font-size:10px;color:rgba(235,101,3,.5);letter-spacing:.1em;text-transform:uppercase;margin:.75rem 0 .4rem">Interests</div><div class="card-tags">${themes.map(t=>`<span class="card-tag">${t}</span>`).join('')}</div>`:''}
+  `;
+}
+
+// ── EXPORT ────────────────────────────────────────
+function exportJSON(){
+  // ✅ collecter toutes les étapes avant export
+  for(let i = 1; i <= 7; i++){
+    collectStep(i);
+  }
+
+  data.meta.exported = new Date().toISOString();
+
+  const jsonStr = JSON.stringify(data, null, 2);
+
+  // ✅ création fichier
+  const blob = new Blob([jsonStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+
+  const safe = (data.identity.name || 'member')
+    .replace(/[^a-z0-9]/gi,'-')
+    .toLowerCase();
+
+  a.download = `explab-member-${safe}-${new Date().toISOString().slice(0,10)}.json`;
+
+  document.body.appendChild(a); // ✅ important pour mobile
+  a.click();
+  document.body.removeChild(a);
+
+  URL.revokeObjectURL(url);
+}
+// ── INIT ──────────────────────────────────────────
+document.addEventListener('DOMContentLoaded',()=>{
+  buildSkillRows();
+  initEmailJS();
+  showStep(1);
+});
+
+// Expose all onclick-called functions explicitly to window
+// (guards against strict-mode or bundler scope issues)
+window.goNext          = goNext;
+window.goBack          = goBack;
+window.toggleChip      = toggleChip;
+window.selectOne       = selectOne;
+window.setLevel        = setLevel;
+window.addHWChip       = addHWChip;
+window.updateCommit    = updateCommit;
+window.exportJSON      = exportJSON;
+window.addCustomSkill  = addCustomSkill;
+if(cur===7){
+  buildCard();
+  showStep(8);
+
+  const jsonStr = JSON.stringify(data, null, 2);
+
+  sendEmail(jsonStr, data.identity?.name || 'Anonymous');
+
+  // ✅ AJOUT ICI
+  exportJSON();
+}
+
+</script>
+</body>
+</html>
