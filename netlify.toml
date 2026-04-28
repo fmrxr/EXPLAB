@@ -1,0 +1,39 @@
+# EXPLAB — Netlify Configuration
+# Drop the entire folder into app.netlify.com/drop
+
+[build]
+  publish = "."
+
+# Clean URL redirects — /member-form → member-form.html etc.
+[[redirects]]
+  from = "/member-form"
+  to = "/member-form.html"
+  status = 200
+
+[[redirects]]
+  from = "/dashboard"
+  to = "/dashboard.html"
+  status = 200
+
+[[redirects]]
+  from = "/manifesto"
+  to = "/manifesto.html"
+  status = 200
+
+[[redirects]]
+  from = "/event-guide"
+  to = "/event-guide.html"
+  status = 200
+
+[[redirects]]
+  from = "/manifesto-workbook"
+  to = "/manifesto-workbook.html"
+  status = 200
+
+# Security headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

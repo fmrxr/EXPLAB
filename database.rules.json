@@ -1,0 +1,33 @@
+{
+  "rules": {
+    "accounts": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth != null && (auth.uid === $uid || root.child('accounts').child(auth.uid).child('role').val() === 'owner' || root.child('accounts').child(auth.uid).child('role').val() === 'admin')",
+        "role": {
+          ".write": "auth != null && (root.child('accounts').child(auth.uid).child('role').val() === 'owner' || (auth.uid === $uid && !data.exists()))"
+        }
+      }
+    },
+
+    "members": {
+      ".read": true,
+      ".write": "auth != null"
+    },
+
+    "manifesto": {
+      ".read": true,
+      ".write": "auth != null"
+    },
+
+    "mindmap": {
+      ".read": true,
+      ".write": "auth != null"
+    },
+
+    "$other": {
+      ".read": "auth != null && (root.child('accounts').child(auth.uid).child('role').val() === 'owner' || root.child('accounts').child(auth.uid).child('role').val() === 'admin')",
+      ".write": "auth != null && (root.child('accounts').child(auth.uid).child('role').val() === 'owner' || root.child('accounts').child(auth.uid).child('role').val() === 'admin')"
+    }
+  }
+}

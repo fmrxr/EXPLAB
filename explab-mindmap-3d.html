@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EXPLAB ⵣ — Mind Map</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width:100%; height:100%; background:#060610; overflow:hidden; font-family:'DM Sans',sans-serif; color:#e8e6f0; }
+#three { position:fixed; inset:0; z-index:0; }
+#ui { position:fixed; inset:0; z-index:10; pointer-events:none; }
+
+#header { position:absolute; top:0; left:0; right:0; padding:20px 28px; display:flex; align-items:center; justify-content:space-between; pointer-events:auto; }
+#wordmark { font-family:'Space Mono',monospace; font-size:12px; letter-spacing:.18em; color:#e8e6f0; opacity:.75; }
+#wordmark span { color:#e94560; }
+#tagline { font-size:10px; letter-spacing:.15em; color:#5a5870; text-transform:uppercase; font-family:'Space Mono',monospace; }
+
+#filters { position:absolute; top:64px; left:50%; transform:translateX(-50%); display:flex; gap:6px; flex-wrap:wrap; justify-content:center; pointer-events:auto; }
+.pill { padding:4px 12px; border-radius:1px; font-size:9px; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; border:1px solid rgba(232,230,240,.1); transition:all .2s; color:#5a5870; background:transparent; font-family:'Space Mono',monospace; }
+.pill:hover { color:#e8e6f0; border-color:rgba(232,230,240,.3); }
+.pill.active { color:#e8e6f0; border-color:#e94560; }
+
+#legend { position:absolute; bottom:28px; left:28px; display:flex; flex-direction:column; gap:8px; pointer-events:auto; }
+.leg { display:flex; align-items:center; gap:8px; cursor:pointer; opacity:.5; transition:opacity .2s; }
+.leg:hover { opacity:1; }
+.leg-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+.leg-label { font-size:9px; letter-spacing:.12em; color:#5a5870; text-transform:uppercase; font-family:'Space Mono',monospace; }
+
+#hint { position:absolute; bottom:28px; right:28px; font-size:9px; color:#2a2840; letter-spacing:.1em; line-height:2.2; text-align:right; font-family:'Space Mono',monospace; transition:opacity .4s; }
+
+/* ── PANEL ── */
+#panel {
+  position:absolute; top:50%; right:32px;
+  transform:translateY(-50%) translateX(30px);
+  width:min(380px,90vw);
+  background:rgba(6,6,16,.94);
+  border:1px solid rgba(233,69,96,.18);
+  pointer-events:auto;
+  opacity:0; transition:opacity .35s, transform .35s;
+  backdrop-filter:blur(24px);
+  display:none;
+  flex-direction:column;
+  max-height:88vh;
+  overflow:hidden;
+}
+#panel.visible { display:flex; opacity:1; transform:translateY(-50%) translateX(0); }
+
+#panel-header { padding:22px 24px 16px; border-bottom:1px solid rgba(232,230,240,.06); flex-shrink:0; }
+#panel-close { position:absolute; top:14px; right:18px; font-size:18px; color:#3a3850; cursor:pointer; line-height:1; z-index:2; }
+#panel-close:hover { color:#e8e6f0; }
+#panel-cluster { font-family:'Space Mono',monospace; font-size:8px; letter-spacing:.22em; text-transform:uppercase; margin-bottom:7px; }
+#panel-title { font-family:'Space Mono',monospace; font-size:15px; font-weight:700; line-height:1.4; margin-bottom:10px; }
+#panel-body { font-size:12.5px; line-height:1.85; color:rgba(232,230,240,.55); }
+
+/* ── INTERACTION ZONE ── */
+#panel-interact { padding:18px 24px 20px; flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:14px; }
+#panel-interact::-webkit-scrollbar { width:3px; }
+#panel-interact::-webkit-scrollbar-track { background:transparent; }
+#panel-interact::-webkit-scrollbar-thumb { background:rgba(233,69,96,.3); border-radius:2px; }
+
+/* Response tabs */
+#response-tabs { display:flex; gap:0; flex-shrink:0; }
+.rtab {
+  flex:1; padding:9px 6px; font-family:'Space Mono',monospace;
+  font-size:8px; letter-spacing:.12em; text-transform:uppercase;
+  text-align:center; cursor:pointer; color:#3a3850;
+  border-bottom:1px solid rgba(232,230,240,.08);
+  transition:all .2s; position:relative;
+}
+.rtab.active { color:#e8e6f0; border-bottom-color:var(--node-color, #e94560); }
+.rtab:hover:not(.active) { color:#6a6880; }
+
+/* Free text response */
+#free-zone { display:flex; flex-direction:column; gap:10px; }
+#free-textarea {
+  width:100%; min-height:80px; max-height:160px;
+  background:rgba(232,230,240,.04); border:1px solid rgba(232,230,240,.1);
+  color:#e8e6f0; font-family:'DM Sans',sans-serif; font-size:13px;
+  line-height:1.7; padding:12px 14px; resize:vertical;
+  outline:none; transition:border-color .2s;
+}
+#free-textarea:focus { border-color:rgba(233,69,96,.4); }
+#free-textarea::placeholder { color:#3a3850; }
+#free-submit {
+  align-self:flex-end; padding:7px 18px;
+  font-family:'Space Mono',monospace; font-size:9px; letter-spacing:.14em;
+  text-transform:uppercase; background:transparent;
+  border:1px solid rgba(233,69,96,.4); color:#e94560;
+  cursor:pointer; transition:all .2s;
+}
+#free-submit:hover { background:rgba(233,69,96,.12); border-color:#e94560; }
+#free-submit:disabled { opacity:.3; cursor:default; }
+
+/* Impression tags */
+#impression-zone { display:flex; flex-wrap:wrap; gap:8px; }
+.imp-tag {
+  padding:7px 14px; border:1px solid rgba(232,230,240,.12);
+  font-size:12px; cursor:pointer; color:#6a6880;
+  transition:all .25s; border-radius:1px; background:transparent;
+  position:relative; overflow:hidden;
+}
+.imp-tag::before {
+  content:''; position:absolute; inset:0;
+  background:var(--node-color,#e94560); opacity:0; transition:opacity .25s;
+}
+.imp-tag:hover { color:#e8e6f0; border-color:rgba(232,230,240,.3); }
+.imp-tag.selected { color:#e8e6f0; border-color:var(--node-color,#e94560); }
+.imp-tag.selected::before { opacity:.15; }
+.imp-count { font-size:9px; color:#5a5870; margin-left:5px; font-family:'Space Mono',monospace; }
+
+/* Spectrum slider */
+#spectrum-zone { display:flex; flex-direction:column; gap:10px; }
+.spectrum-item { display:flex; flex-direction:column; gap:6px; }
+.spectrum-labels { display:flex; justify-content:space-between; font-size:10px; color:#5a5870; }
+.spectrum-track {
+  position:relative; height:3px;
+  background:rgba(232,230,240,.08); cursor:pointer;
+}
+.spectrum-fill { position:absolute; top:0; left:0; height:100%; background:var(--node-color,#e94560); transition:width .15s; }
+.spectrum-thumb {
+  position:absolute; top:50%; transform:translate(-50%,-50%);
+  width:14px; height:14px; border-radius:50%;
+  background:var(--node-color,#e94560);
+  border:2px solid #060610; cursor:grab; transition:left .15s;
+  box-shadow:0 0 8px var(--node-color,#e94560);
+}
+.spectrum-val { text-align:center; font-family:'Space Mono',monospace; font-size:9px; color:rgba(232,230,240,.4); }
+
+/* Responses feed */
+#responses-feed { display:flex; flex-direction:column; gap:10px; }
+.response-item {
+  padding:10px 12px; background:rgba(232,230,240,.03);
+  border-left:2px solid var(--node-color,#e94560);
+  font-size:12px; line-height:1.7; color:rgba(232,230,240,.7);
+  animation:fadeSlide .3s ease;
+}
+.response-item .r-meta { font-family:'Space Mono',monospace; font-size:8px; color:#3a3850; margin-bottom:5px; letter-spacing:.1em; }
+.response-empty { font-size:11px; color:#3a3850; font-style:italic; text-align:center; padding:16px 0; font-family:'Space Mono',monospace; }
+
+/* AI reflect */
+#ai-zone { display:flex; flex-direction:column; gap:10px; }
+#ai-trigger {
+  padding:9px 16px; font-family:'Space Mono',monospace; font-size:9px;
+  letter-spacing:.12em; text-transform:uppercase;
+  background:transparent; border:1px solid rgba(127,119,221,.3);
+  color:#7f77dd; cursor:pointer; transition:all .2s; text-align:center;
+}
+#ai-trigger:hover { background:rgba(127,119,221,.08); border-color:#7f77dd; }
+#ai-output {
+  font-size:12.5px; line-height:1.85; color:rgba(232,230,240,.65);
+  min-height:40px; display:none;
+}
+#ai-output.streaming::after { content:'▋'; animation:blink .6s infinite; color:#7f77dd; }
+#ai-cursor { display:inline-block; width:7px; height:13px; background:#7f77dd; vertical-align:middle; animation:blink .6s infinite; margin-left:2px; }
+
+/* Submitted confirmation */
+.submit-ok {
+  font-family:'Space Mono',monospace; font-size:9px; letter-spacing:.12em;
+  color:#1d9e75; text-transform:uppercase; text-align:right;
+  animation:fadeSlide .3s ease;
+}
+
+@keyframes fadeSlide { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="auth.js"></script>
+<script src="auth-guard.js"></script>
+</head>
+<body>
+<div id="three"></div>
+<div id="ui">
+  <div id="header">
+    <div id="wordmark">EXPLAB <span>ⵣ</span></div>
+    <div id="tagline">3D Mind Map</div>
+  </div>
+  <div id="filters">
+    <button class="pill active" data-cluster="all">All</button>
+    <button class="pill" data-cluster="curiosity">Curiosity</button>
+    <button class="pill" data-cluster="community">Community</button>
+    <button class="pill" data-cluster="failure">Failure</button>
+    <button class="pill" data-cluster="tools">Tools</button>
+    <button class="pill" data-cluster="values">Values</button>
+    <button class="pill" data-cluster="space">Space</button>
+  </div>
+  <div id="legend">
+    <div class="leg" data-cluster="curiosity"><div class="leg-dot" style="background:#7f77dd"></div><div class="leg-label">Curiosity</div></div>
+    <div class="leg" data-cluster="community"><div class="leg-dot" style="background:#1d9e75"></div><div class="leg-label">Community</div></div>
+    <div class="leg" data-cluster="failure"><div class="leg-dot" style="background:#e94560"></div><div class="leg-label">Failure & Courage</div></div>
+    <div class="leg" data-cluster="tools"><div class="leg-dot" style="background:#ef9f27"></div><div class="leg-label">Tools & Skills</div></div>
+    <div class="leg" data-cluster="values"><div class="leg-dot" style="background:#5dcaa5"></div><div class="leg-label">Values</div></div>
+    <div class="leg" data-cluster="space"><div class="leg-dot" style="background:#d85a30"></div><div class="leg-label">Space & Place</div></div>
+  </div>
+  <div id="hint">drag · rotate<br>scroll · zoom<br>click · respond</div>
+
+  <!-- PANEL -->
+  <div id="panel">
+    <div id="panel-close">×</div>
+    <div id="panel-header">
+      <div id="panel-cluster"></div>
+      <div id="panel-title"></div>
+      <div id="panel-body"></div>
+    </div>
+
+    <!-- Response mode tabs -->
+    <div id="response-tabs">
+      <div class="rtab active" data-tab="write">✎ Write</div>
+      <div class="rtab" data-tab="feel">◎ Feel</div>
+      <div class="rtab" data-tab="spectrum">~ Spectrum</div>
+      <div class="rtab" data-tab="voices">◉ Voices</div>
+      <div class="rtab" data-tab="reflect">✦ Reflect</div>
+    </div>
+
+    <div id="panel-interact">
+
+      <!-- WRITE tab: free text -->
+      <div id="tab-write" class="tab-content">
+        <div id="free-zone">
+          <textarea id="free-textarea" placeholder="say something real..."></textarea>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+            <div style="font-size:10px;color:#3a3850;font-family:'Space Mono',monospace" id="char-count">0 / 280</div>
+            <button id="free-submit">→ Leave it here</button>
+          </div>
+          <div id="write-ok" class="submit-ok" style="display:none">✓ left in the cloud</div>
+        </div>
+      </div>
+
+      <!-- FEEL tab: impression tags -->
+      <div id="tab-feel" class="tab-content" style="display:none">
+        <div style="font-size:11px;color:#5a5870;margin-bottom:12px;font-family:'Space Mono',monospace;letter-spacing:.06em">pick everything that resonates</div>
+        <div id="impression-zone"></div>
+        <div id="feel-ok" class="submit-ok" style="display:none;margin-top:8px">✓ recorded</div>
+      </div>
+
+      <!-- SPECTRUM tab: sliders -->
+      <div id="tab-spectrum" class="tab-content" style="display:none">
+        <div style="font-size:11px;color:#5a5870;margin-bottom:14px;font-family:'Space Mono',monospace;letter-spacing:.06em">position yourself</div>
+        <div id="spectrum-zone"></div>
+        <div id="spectrum-ok" class="submit-ok" style="display:none;margin-top:8px">✓ noted</div>
+      </div>
+
+      <!-- VOICES tab: community feed -->
+      <div id="tab-voices" class="tab-content" style="display:none">
+        <div style="font-size:11px;color:#5a5870;margin-bottom:12px;font-family:'Space Mono',monospace;letter-spacing:.06em">what others left here</div>
+        <div id="responses-feed"></div>
+      </div>
+
+      <!-- REFLECT tab: AI synthesis -->
+      <div id="tab-reflect" class="tab-content" style="display:none">
+        <div style="font-size:11px;color:#5a5870;margin-bottom:12px;font-family:'Space Mono',monospace;letter-spacing:.06em;line-height:1.7">ask the space to reflect back what it hears — synthesized from what the community has left here</div>
+        <div id="ai-zone">
+          <button id="ai-trigger">✦ synthesize the room</button>
+          <div id="ai-output"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const SYMBOL_SRC = 'data:image/png;base64,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';
+
+// ── DATA ──────────────────────────────────────────────────────────────────────
+const CLUSTERS = {
+  curiosity: { color:0x7f77dd, hex:'#7f77dd', label:'Curiosity' },
+  community: { color:0x1d9e75, hex:'#1d9e75', label:'Community' },
+  failure:   { color:0xe94560, hex:'#e94560', label:'Failure & Courage' },
+  tools:     { color:0xef9f27, hex:'#ef9f27', label:'Tools & Skills' },
+  values:    { color:0x5dcaa5, hex:'#5dcaa5', label:'Values' },
+  space:     { color:0xd85a30, hex:'#d85a30', label:'Space & Place' },
+};
+
+const IMPRESSIONS = {
+  curiosity: ['this is me','I feel this','not yet','I want this','I need to think'],
+  community: ['I feel this','I want to give this','I need this','already doing it','aspirational'],
+  failure:   ['this is me','raw','relieved someone said it','I carry this too','working on it'],
+  tools:     ['I have this','I want this','I can teach this','I want to learn','we need more'],
+  values:    ['I believe this','we need to practice it','already broken here','protect this','name it louder'],
+  space:     ['let\'s do it','I\'m nervous','I\'m ready','when?','I want to help'],
+};
+
+const SPECTRUMS = {
+  curiosity: [
+    { left:'comfortable', right:'restless', label:'where I am right now' },
+    { left:'doubt it', right:'certain', label:'I believe we can change something' },
+  ],
+  community: [
+    { left:'alone in this', right:'held by this', label:'how I feel in the group' },
+    { left:'taker', right:'giver', label:'my energy flow right now' },
+  ],
+  failure:   [
+    { left:'terrified of failing', right:'okay with failing', label:'my relationship with failure' },
+    { left:'hide it', right:'share it', label:'what I do when I fail' },
+  ],
+  tools:     [
+    { left:'beginner', right:'expert', label:'my overall tool depth' },
+    { left:'solo', right:'collaborative', label:'how I prefer to make things' },
+  ],
+  values:    [
+    { left:'we talk the talk', right:'we walk the walk', label:'ExpLab\'s values in practice' },
+    { left:'I stay quiet', right:'I speak up', label:'when something feels wrong' },
+  ],
+  space:     [
+    { left:'not ready', right:'let\'s go', label:'for the first project' },
+    { left:'anonymous', right:'public', label:'my comfort with visibility' },
+  ],
+};
+
+const RAW = [
+  { cluster:'curiosity', size:1.1, label:'For the joy\nof discovery',   body:'One of the first phrases in the founding session. Not "to build a career." For the joy of it. That phrasing places the act of finding above the value of what is found.', question:'What have you discovered recently — about yourself, about the city, about making something?' },
+  { cluster:'curiosity', size:0.8, label:'Bored by\nwhat exists',       body:'The things that exist already got boring. This is not apathy — it is restlessness. The creative drive that comes from dissatisfaction is one of the most powerful forces in any community.', question:'What specifically got boring for you? And what were you looking for that you weren\'t finding?' },
+  { cluster:'curiosity', size:0.7, label:'Explore new\npossibilities',  body:'The very first phrase from the founding session. Before community, before tools — the desire to explore. This community is fundamentally about epistemic restlessness.', question:'What possibility are you most excited to explore? What do you not know yet but want to?' },
+  { cluster:'curiosity', size:0.6, label:'Change\nthe world',           body:'Said in the same breath as "things got boring." The ambition is real and paired with pragmatism. ExpLab is not a place for passive dreaming.', question:'What specific thing — small or large — do you want to see different? Not in general. In particular.' },
+  { cluster:'curiosity', size:0.5, label:'Questions\nwelcome',          body:'One of the founding session\'s core red lines: silencing of questioning will not be tolerated. Every question is valid here.', question:'What question have you been afraid to ask here? Leave it. Anonymous is fine.' },
+  { cluster:'community', size:1.1, label:'Build\ncommunity',            body:'The third phrase from the founding session — and it came naturally, without prompting. Community is not a side effect of the work here. It is the work.', question:'What does a community that actually works feel like to you? Have you experienced one? Describe it.' },
+  { cluster:'community', size:0.9, label:'Uplift\neach other',          body:'"Create and gather, to build community, learn and uplift each other." Not to be uplifted — to uplift. The direction of the generosity matters.', question:'Who in this group have you uplifted, or who has uplifted you? You don\'t need to name them. Describe the moment.' },
+  { cluster:'community', size:0.75,label:'Sharing\nis the work',        body:'"Sharing" appeared twice in the founding session — unprompted, from different people. Sharing is not weakness here. It is the whole point.', question:'What\'s something you know how to do that you\'ve been keeping to yourself? What would it take to share it?' },
+  { cluster:'community', size:0.65,label:'19 humans',                   body:'Visual artists, sound engineers, architects, filmmakers, a writer, a chef, a technologist. 28 tools between them. Hardware scattered across the city. The collective is already rich.', question:'What\'s the most surprising skill or resource in this group that you\'ve discovered? What does it make possible?' },
+  { cluster:'community', size:0.5, label:'Materialize\nan idea',        body:'Someone came to the founding session simply to make something real that exists only in their head. The community as a materializing force.', question:'What idea lives only in your head right now? Describe it. Just get it out of your head and into the space.' },
+  { cluster:'failure',   size:1.3, label:'Fail',                        body:'One person\'s recurring word. Not a slogan — a confession. Their internal monologue returns to this word. This community needs to be a place where failure loses its sting.', question:'What have you failed at recently — in work, in making, in showing up? Say it plainly. This is a safe place to put it.' },
+  { cluster:'failure',   size:0.85,label:'Social\nanxiety',             body:'Two people named it at the founding session. The threshold of entry is high for this group. Showing up was already an act of courage.', question:'What was going through your head before you walked in? Be specific. Your honesty will help someone else.' },
+  { cluster:'failure',   size:0.7, label:'Cold,\nshivering\neven',      body:'The most honest thing said in the founding session. Shivering implies exposure. The physical body communicating what words couldn\'t carry.', question:'When have you felt most exposed in a creative context? What happened? What did you do with it?' },
+  { cluster:'failure',   size:0.6, label:'Courage\nto show up',         body:'For some people in this room, arriving was the hardest part. That courage should not be invisible. The community sees it.', question:'What made you come despite the hesitation? What was the thing that tipped you toward showing up?' },
+  { cluster:'tools',     size:1.0, label:'TouchDesigner\n& Ableton',    body:'6 members each — the two most developed specialist clusters. Real-time visuals meet experimental sound. A live AV performance waiting to happen.', question:'If you could build one thing using the tools in this group, what would it be? Describe it like you\'re pitching it in 30 seconds.' },
+  { cluster:'tools',     size:0.85,label:'Blender\nHoudini\nCinema 4D', body:'The 3D backbone. Kenza\'s Houdini + Sara Kanzari\'s LiDAR = spatial scanning into generative form. The group has serious depth here.', question:'What 3D or spatial project do you want to make? What\'s stopping you from starting it?' },
+  { cluster:'tools',     size:0.7, label:'Hardware\nlibrary',           body:'LiDAR, Kinect, 3D printer, laser cutter, synths, MIDI rigs, depth cameras. 11 pieces across 5 members. A community resource waiting to be activated.', question:'What hardware do you have that you\'d share with the group? What would you want to borrow? Name the exchange.' },
+  { cluster:'tools',     size:0.6, label:'VVVV',                        body:'Rafik is the only member with VVVV — rare, powerful, generative. He\'s currently just watching. His tool + Blits\'s projector rig + Molka\'s synths = a complete live AV setup.', question:'Rafik — what would it take to get you in the room? What are you waiting to see before you step in?' },
+  { cluster:'tools',     size:0.5, label:'Code\nneeds depth',           body:'Python and JS are present but at low proficiency. The gap between making things look good and making things behave interactively is code. It can be closed internally.', question:'Who wants to learn to code? Who can teach? Leave your name or just "I\'ll teach" / "I want to learn".' },
+  { cluster:'values',    size:1.0, label:'No\ngatekeeping',             body:'Named explicitly as a red line in the founding session. Knowledge should not be held as power. The door should not be beautiful and locked.', question:'Where have you experienced gatekeeping — in creative spaces, in education, in Tunis? What did it feel like? What should have happened instead?' },
+  { cluster:'values',    size:0.85,label:'Diversity\nis the point',     body:'A chef. A writer-engineer. A parametric architect. A sound designer. The diversity is not accidental — it is the mechanism.', question:'What has someone else in this group taught you that you couldn\'t have learned in your own discipline?' },
+  { cluster:'values',    size:0.7, label:'No\ngroupthink',              body:'One person named groupthink as the mechanism by which collectives become dangerous — not through malice but through suppression of dissent.', question:'What\'s something you disagree with about how ExpLab is being built? Say it. Dissent is a gift here.' },
+  { cluster:'values',    size:0.6, label:'borgden\nla7low',             body:'One person code-switched into Tunisian Arabic for this — a phrase for those who perform ease and openness while quietly holding the door closed.', question:'Have you seen this behavior anywhere here — or in any creative space in Tunis? What did it look like? What should we watch for?' },
+  { cluster:'values',    size:0.5, label:'Find yourself',               body:'"To find pieces of the puzzle that is me, and inspire others to find themselves." Self-discovery as a reason to gather. The community as a mirror.', question:'What piece of yourself have you found through making, or through being in this group? What are you still looking for?' },
+  { cluster:'space',     size:1.0, label:'Tunis\nas context',           body:'Centre-ville, Ariana, Ben Arous, La Marsa, Banlieue Sud. The city is distributed but walkable. The group can meet physically with minimal cost.', question:'What does Tunis give to this community that another city couldn\'t? What does it make harder?' },
+  { cluster:'space',     size:0.85,label:'First\nproject',              body:'The group has the tools, the hardware, the people. What it needs is a first shared output. Something public. Something that exists in the world.', question:'What should the first ExpLab project be? Describe it. Format, theme, who\'s involved, where it lives.' },
+  { cluster:'space',     size:0.7, label:'Session\nrhythm',             body:'The infrastructure is forming. What it needs is rhythm — a predictable cadence of meeting that reduces the anxiety of arrival.', question:'What session rhythm works for you? When, how often, how long, in what format? Be specific about your actual constraints.' },
+  { cluster:'space',     size:0.6, label:'Icebreaker\ndesign',          body:'For a group with social anxiety, the icebreaker is not optional. It should be making-based, not speaking-based. Build something. Hands before words.', question:'Design an icebreaker for this group. One you would actually want to do. What is it? Walk us through it.' },
+  { cluster:'space',     size:0.5, label:'Public\nartifact',            body:'The 90-day target: one thing that exists in the world and carries the ExpLab name. Not a logo. Not a post. Something made, performed, or installed.', question:'What form should the first public ExpLab artifact take? An installation? A performance? A publication? Something else entirely?' },
+];
+
+// ── STORAGE (localStorage per node) ───────────────────────────────────────────
+function storageKey(nodeId) { return `explab_node_${nodeId}`; }
+function getNodeData(nodeId) {
+  try { return JSON.parse(localStorage.getItem(storageKey(nodeId))) || { texts:[], impressions:[], spectrums:{} }; }
+  catch { return { texts:[], impressions:[], spectrums:{} }; }
+}
+function saveNodeData(nodeId, data) {
+  try { localStorage.setItem(storageKey(nodeId), JSON.stringify(data)); } catch {}
+}
+
+// ── ACTIVE STATE ──────────────────────────────────────────────────────────────
+let currentNode = null;
+let currentTab = 'write';
+let spectrumDragging = null;
+let spectrumValues = {};
+
+// ── THREE.JS SETUP ────────────────────────────────────────────────────────────
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x060610);
+scene.fog = new THREE.FogExp2(0x060610, 0.038);
+const camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 0.1, 300);
+camera.position.set(0, 0, 22);
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth, innerHeight);
+document.getElementById('three').appendChild(renderer.domElement);
+
+const CENTERS = {
+  curiosity: new THREE.Vector3(-5.5, 4.5, 1.5),
+  community: new THREE.Vector3( 5.5, 4.0, 1.5),
+  failure:   new THREE.Vector3( 0.5,-4.0, 6.0),
+  tools:     new THREE.Vector3( 6.0,-3.0,-2.5),
+  values:    new THREE.Vector3(-4.5, 0.5,-6.0),
+  space:     new THREE.Vector3(-5.5,-4.0,-1.5),
+};
+
+// Dust cloud
+const dGeo = new THREE.BufferGeometry();
+const dN = 1200, dP = new Float32Array(dN*3), dC = new Float32Array(dN*3);
+const cColors = Object.values(CLUSTERS).map(c=>new THREE.Color(c.color));
+for(let i=0;i<dN;i++){
+  const r=20+Math.random()*18, th=Math.random()*Math.PI*2, ph=Math.random()*Math.PI;
+  dP[i*3]=r*Math.sin(ph)*Math.cos(th); dP[i*3+1]=r*Math.sin(ph)*Math.sin(th); dP[i*3+2]=r*Math.cos(ph);
+  const c=cColors[Math.floor(Math.random()*cColors.length)];
+  dC[i*3]=c.r*0.35; dC[i*3+1]=c.g*0.35; dC[i*3+2]=c.b*0.35;
+}
+dGeo.setAttribute('position',new THREE.BufferAttribute(dP,3));
+dGeo.setAttribute('color',new THREE.BufferAttribute(dC,3));
+scene.add(new THREE.Points(dGeo,new THREE.PointsMaterial({size:0.06,vertexColors:true,transparent:true,opacity:0.55})));
+
+// Nucleus
+const nucGroup = new THREE.Group();
+scene.add(nucGroup);
+const texLoader = new THREE.TextureLoader();
+const symTex = texLoader.load(SYMBOL_SRC);
+const symMat = new THREE.MeshBasicMaterial({map:symTex,transparent:true,opacity:0,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,depthWrite:false});
+const symPlane = new THREE.Mesh(new THREE.PlaneGeometry(2.2,2.8),symMat);
+nucGroup.add(symPlane);
+const symMat2 = symMat.clone();
+const symPlane2 = new THREE.Mesh(new THREE.PlaneGeometry(2.2,2.8),symMat2);
+symPlane2.rotation.y = Math.PI;
+nucGroup.add(symPlane2);
+setTimeout(()=>{ symMat.opacity=0.8; symMat2.opacity=0.8; },200);
+[2.2,3.0,3.9].forEach((r,i)=>{
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(r,0.012,6,80),
+    new THREE.MeshBasicMaterial({color:[0xe94560,0x7f77dd,0x1d9e75][i],transparent:true,opacity:0.25-i*0.05}));
+  ring.rotation.x=0.6+i*0.55; ring.rotation.y=i*0.8;
+  nucGroup.add(ring);
+});
+const coreMesh = new THREE.Mesh(new THREE.SphereGeometry(0.4,24,24),
+  new THREE.MeshBasicMaterial({color:0xe94560,transparent:true,opacity:0.12}));
+nucGroup.add(coreMesh);
+
+// Label sprite factory
+function makeLabel(label,hexColor){
+  const c=document.createElement('canvas'); c.width=320; c.height=160;
+  const cx=c.getContext('2d');
+  cx.clearRect(0,0,320,160);
+  const lines=label.split('\n');
+  cx.font='500 20px "DM Sans",sans-serif'; cx.textAlign='center';
+  cx.fillStyle=hexColor; cx.shadowColor=hexColor; cx.shadowBlur=10;
+  const lh=27, totalH=lines.length*lh;
+  lines.forEach((l,i)=>cx.fillText(l,160,80-totalH/2+i*lh+lh*0.8));
+  const tex=new THREE.CanvasTexture(c);
+  const mat=new THREE.SpriteMaterial({map:tex,transparent:true,opacity:0.88,depthWrite:false,blending:THREE.AdditiveBlending});
+  const sp=new THREE.Sprite(mat); sp.scale.set(3.2,1.6,1);
+  return {sprite:sp,mat};
+}
+
+// Edge factory
+function makeEdge(to,col){
+  const mid=to.clone().multiplyScalar(0.45);
+  const pts=new THREE.QuadraticBezierCurve3(new THREE.Vector3(),mid,to).getPoints(22);
+  const geo=new THREE.BufferGeometry().setFromPoints(pts);
+  const mat=new THREE.LineBasicMaterial({color:col,transparent:true,opacity:0.07,depthWrite:false});
+  return {line:new THREE.Line(geo,mat),mat};
+}
+
+// Participation halo — shows response intensity
+function makeParticipationHalo(pos, col, count) {
+  const group = new THREE.Group();
+  const spread = 0.6 + count * 0.15;
+  for(let i=0;i<Math.min(count,12);i++){
+    const theta = (i/Math.min(count,12))*Math.PI*2;
+    const r = spread;
+    const pm = new THREE.Mesh(
+      new THREE.SphereGeometry(0.04,6,6),
+      new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:0.6,blending:THREE.AdditiveBlending})
+    );
+    pm.position.set(Math.cos(theta)*r, Math.sin(theta)*r*0.3, Math.sin(theta)*r);
+    group.add(pm);
+  }
+  group.position.copy(pos);
+  return group;
+}
+
+const nodeObjects = [];
+RAW.forEach((d,i)=>{
+  const center = CENTERS[d.cluster];
+  const col = CLUSTERS[d.cluster].color;
+  const hex = CLUSTERS[d.cluster].hex;
+  const spread = 2.6;
+  const pos = new THREE.Vector3(
+    center.x+(Math.random()-.5)*spread,
+    center.y+(Math.random()-.5)*spread,
+    center.z+(Math.random()-.5)*spread
+  );
+  const r = d.size*0.32;
+
+  const innerMat = new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:0.45,blending:THREE.AdditiveBlending,depthWrite:false});
+  const inner = new THREE.Mesh(new THREE.SphereGeometry(r*.5,16,16),innerMat);
+  inner.position.copy(pos); scene.add(inner);
+
+  const shellMat = new THREE.MeshBasicMaterial({color:col,wireframe:true,transparent:true,opacity:0.32,depthWrite:false});
+  const shell = new THREE.Mesh(new THREE.IcosahedronGeometry(r,1),shellMat);
+  shell.position.copy(pos); scene.add(shell);
+
+  const haloMat = new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:0.18,depthWrite:false});
+  const halo = new THREE.Mesh(new THREE.TorusGeometry(r*1.4,.008,6,40),haloMat);
+  halo.position.copy(pos); halo.rotation.x=Math.random()*Math.PI; halo.rotation.y=Math.random()*Math.PI;
+  scene.add(halo);
+
+  const {sprite,mat:spriteMat} = makeLabel(d.label,hex);
+  sprite.position.set(pos.x,pos.y+r+0.5,pos.z); scene.add(sprite);
+
+  const {line,mat:lineMat} = makeEdge(pos,col);
+  scene.add(line);
+
+  // Response count indicator
+  const nodeData = getNodeData(i);
+  const totalResponses = nodeData.texts.length + nodeData.impressions.length;
+  let haloGroup = null;
+  if(totalResponses > 0) {
+    haloGroup = makeParticipationHalo(pos, col, totalResponses);
+    scene.add(haloGroup);
+  }
+
+  nodeObjects.push({
+    data:d, id:i, pos, origPos:pos.clone(), floatSeed:Math.random()*Math.PI*2,
+    inner,innerMat, shell,shellMat, halo,haloMat, sprite,spriteMat, line,lineMat,
+    haloGroup, r, visible:true, hovered:false
+  });
+});
+
+// Inter-cluster threads
+Object.keys(CENTERS).forEach((a,i,arr)=>{
+  arr.slice(i+1).forEach(b=>{
+    const geo=new THREE.BufferGeometry().setFromPoints([CENTERS[a],CENTERS[b]]);
+    scene.add(new THREE.Line(geo,new THREE.LineBasicMaterial({color:0x1a1a30,transparent:true,opacity:0.15})));
+  });
+});
+
+// ── ORBIT CONTROLS ────────────────────────────────────────────────────────────
+let isDrag=false, pMx=0, pMy=0;
+let sph={theta:0.3,phi:1.25,r:22}, tSph={...sph};
+const el=renderer.domElement;
+el.addEventListener('mousedown',e=>{isDrag=true;pMx=e.clientX;pMy=e.clientY;});
+window.addEventListener('mouseup',()=>isDrag=false);
+window.addEventListener('mousemove',e=>{
+  if(!isDrag) return;
+  tSph.theta-=(e.clientX-pMx)*0.004;
+  tSph.phi=Math.max(.25,Math.min(Math.PI-.25,tSph.phi+(e.clientY-pMy)*0.004));
+  pMx=e.clientX; pMy=e.clientY;
+});
+el.addEventListener('wheel',e=>{ tSph.r=Math.max(7,Math.min(40,tSph.r+e.deltaY*.02)); });
+let lt=null;
+el.addEventListener('touchstart',e=>{if(e.touches.length===1){isDrag=true;lt={x:e.touches[0].clientX,y:e.touches[0].clientY};}},{passive:true});
+el.addEventListener('touchend',()=>{isDrag=false;lt=null;});
+el.addEventListener('touchmove',e=>{
+  if(!isDrag||!lt) return;
+  tSph.theta-=(e.touches[0].clientX-lt.x)*.005;
+  tSph.phi=Math.max(.25,Math.min(Math.PI-.25,tSph.phi+(e.touches[0].clientY-lt.y)*.005));
+  lt={x:e.touches[0].clientX,y:e.touches[0].clientY};
+},{passive:true});
+
+// ── RAYCASTING ────────────────────────────────────────────────────────────────
+const raycaster=new THREE.Raycaster();
+const ptr=new THREE.Vector2();
+let hoveredNode=null, lastClickPos={x:0,y:0};
+
+function getHit(cx,cy){
+  ptr.x=(cx/innerWidth)*2-1; ptr.y=-(cy/innerHeight)*2+1;
+  raycaster.setFromCamera(ptr,camera);
+  const hits=raycaster.intersectObjects(nodeObjects.filter(n=>n.visible).map(n=>n.inner));
+  if(!hits.length) return null;
+  return nodeObjects.find(n=>n.inner===hits[0].object)||null;
+}
+el.addEventListener('mousedown',e=>{lastClickPos={x:e.clientX,y:e.clientY};});
+el.addEventListener('click',e=>{
+  if(Math.abs(e.clientX-lastClickPos.x)>5||Math.abs(e.clientY-lastClickPos.y)>5) return;
+  const hit=getHit(e.clientX,e.clientY);
+  hit ? openPanel(hit) : closePanel();
+});
+el.addEventListener('mousemove',e=>{
+  if(isDrag) return;
+  hoveredNode=getHit(e.clientX,e.clientY);
+  el.style.cursor=hoveredNode?'pointer':'grab';
+});
+
+// ── PANEL SYSTEM ──────────────────────────────────────────────────────────────
+function openPanel(nodeObj) {
+  currentNode = nodeObj;
+  const d = nodeObj.data;
+  const col = CLUSTERS[d.cluster].hex;
+
+  // Set CSS var for color theming
+  document.getElementById('panel').style.setProperty('--node-color', col);
+  document.getElementById('panel-cluster').textContent = CLUSTERS[d.cluster].label;
+  document.getElementById('panel-cluster').style.color = col;
+  document.getElementById('panel-title').textContent = d.label.replace(/\n/g,' ');
+  document.getElementById('panel-body').textContent = d.body;
+
+  // Reset
+  document.getElementById('free-textarea').value = '';
+  document.getElementById('char-count').textContent = '0 / 280';
+  document.getElementById('write-ok').style.display='none';
+  document.getElementById('feel-ok').style.display='none';
+  document.getElementById('spectrum-ok').style.display='none';
+  document.getElementById('ai-output').style.display='none';
+  document.getElementById('ai-output').textContent='';
+
+  // Build impression tags
+  buildImpressions(nodeObj.id, d.cluster, col);
+  buildSpectrums(nodeObj.id, d.cluster, col);
+  buildFeed(nodeObj.id, col);
+
+  // Update question in textarea
+  document.getElementById('free-textarea').placeholder = d.question || 'say something real...';
+
+  switchTab('write');
+
+  const panel = document.getElementById('panel');
+  panel.style.display='flex';
+  requestAnimationFrame(()=>panel.classList.add('visible'));
+}
+
+function closePanel(){
+  currentNode = null;
+  const p=document.getElementById('panel');
+  p.classList.remove('visible');
+  setTimeout(()=>p.style.display='none',350);
+}
+document.getElementById('panel-close').onclick=closePanel;
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.rtab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));
+  document.querySelectorAll('.tab-content').forEach(t=>t.style.display='none');
+  document.getElementById(`tab-${tab}`).style.display='flex';
+  document.getElementById(`tab-${tab}`).style.flexDirection='column';
+}
+document.querySelectorAll('.rtab').forEach(t=>t.addEventListener('click',()=>switchTab(t.dataset.tab)));
+
+// ── WRITE TAB ─────────────────────────────────────────────────────────────────
+const textarea = document.getElementById('free-textarea');
+textarea.addEventListener('input',()=>{
+  const len = textarea.value.length;
+  document.getElementById('char-count').textContent = `${len} / 280`;
+  if(len > 280) textarea.value = textarea.value.slice(0,280);
+});
+
+document.getElementById('free-submit').addEventListener('click',()=>{
+  if(!currentNode || !textarea.value.trim()) return;
+  const data = getNodeData(currentNode.id);
+  data.texts.push({ text: textarea.value.trim(), ts: Date.now() });
+  saveNodeData(currentNode.id, data);
+  textarea.value='';
+  document.getElementById('char-count').textContent='0 / 280';
+  document.getElementById('write-ok').style.display='block';
+  updateNodeHalo(currentNode);
+  setTimeout(()=>document.getElementById('write-ok').style.display='none',2500);
+});
+
+// ── FEEL TAB ──────────────────────────────────────────────────────────────────
+function buildImpressions(nodeId, cluster, col) {
+  const zone = document.getElementById('impression-zone');
+  zone.innerHTML = '';
+  const tags = IMPRESSIONS[cluster] || [];
+  const data = getNodeData(nodeId);
+  tags.forEach(tag=>{
+    const btn = document.createElement('button');
+    btn.className = 'imp-tag';
+    btn.style.setProperty('--node-color', col);
+    const isSelected = data.impressions.includes(tag);
+    if(isSelected) btn.classList.add('selected');
+    const count = 0; // future: shared counts
+    btn.innerHTML = `${tag}`;
+    btn.addEventListener('click',()=>{
+      const d2 = getNodeData(nodeId);
+      if(d2.impressions.includes(tag)){
+        d2.impressions = d2.impressions.filter(x=>x!==tag);
+        btn.classList.remove('selected');
+      } else {
+        d2.impressions.push(tag);
+        btn.classList.add('selected');
+      }
+      saveNodeData(nodeId, d2);
+      updateNodeHalo(currentNode);
+      document.getElementById('feel-ok').style.display='block';
+      setTimeout(()=>document.getElementById('feel-ok').style.display='none',1800);
+    });
+    zone.appendChild(btn);
+  });
+}
+
+// ── SPECTRUM TAB ──────────────────────────────────────────────────────────────
+function buildSpectrums(nodeId, cluster, col) {
+  const zone = document.getElementById('spectrum-zone');
+  zone.innerHTML = '';
+  spectrumValues = {};
+  const specs = SPECTRUMS[cluster] || [];
+  const data = getNodeData(nodeId);
+
+  specs.forEach((spec,si)=>{
+    const saved = data.spectrums[si] !== undefined ? data.spectrums[si] : 50;
+    spectrumValues[si] = saved;
+    const item = document.createElement('div');
+    item.className='spectrum-item';
+    item.innerHTML=`
+      <div style="font-size:10px;color:rgba(232,230,240,.5);font-family:'Space Mono',monospace;letter-spacing:.06em;margin-bottom:4px">${spec.label}</div>
+      <div class="spectrum-labels"><span>${spec.left}</span><span>${spec.right}</span></div>
+      <div class="spectrum-track" data-si="${si}">
+        <div class="spectrum-fill" id="sfill-${si}" style="width:${saved}%;background:${col}"></div>
+        <div class="spectrum-thumb" id="sthumb-${si}" style="left:${saved}%;background:${col};box-shadow:0 0 8px ${col}"></div>
+      </div>
+      <div class="spectrum-val" id="sval-${si}">${Math.round(saved)}%</div>
+    `;
+    zone.appendChild(item);
+
+    // Drag logic
+    const track = item.querySelector('.spectrum-track');
+    function setVal(x){
+      const rect=track.getBoundingClientRect();
+      const pct=Math.max(0,Math.min(100,((x-rect.left)/rect.width)*100));
+      spectrumValues[si]=pct;
+      document.getElementById(`sfill-${si}`).style.width=pct+'%';
+      document.getElementById(`sthumb-${si}`).style.left=pct+'%';
+      document.getElementById(`sval-${si}`).textContent=Math.round(pct)+'%';
+      // save
+      const d2=getNodeData(nodeId);
+      d2.spectrums[si]=pct;
+      saveNodeData(nodeId,d2);
+      document.getElementById('spectrum-ok').style.display='block';
+      clearTimeout(window._specOkTimer);
+      window._specOkTimer=setTimeout(()=>document.getElementById('spectrum-ok').style.display='none',1500);
+    }
+    track.addEventListener('mousedown',e=>{spectrumDragging=si;setVal(e.clientX);e.preventDefault();});
+    track.addEventListener('touchstart',e=>{spectrumDragging=si;setVal(e.touches[0].clientX);},{passive:true});
+  });
+}
+window.addEventListener('mousemove',e=>{
+  if(spectrumDragging===null||spectrumDragging===undefined) return;
+  if(!currentNode) return;
+  const track=document.querySelector(`.spectrum-track[data-si="${spectrumDragging}"]`);
+  if(!track) return;
+  const rect=track.getBoundingClientRect();
+  const pct=Math.max(0,Math.min(100,((e.clientX-rect.left)/rect.width)*100));
+  const si=spectrumDragging;
+  spectrumValues[si]=pct;
+  document.getElementById(`sfill-${si}`).style.width=pct+'%';
+  document.getElementById(`sthumb-${si}`).style.left=pct+'%';
+  document.getElementById(`sval-${si}`).textContent=Math.round(pct)+'%';
+  const d2=getNodeData(currentNode.id); d2.spectrums[si]=pct; saveNodeData(currentNode.id,d2);
+});
+window.addEventListener('mouseup',()=>{ spectrumDragging=null; });
+window.addEventListener('touchend',()=>{ spectrumDragging=null; });
+window.addEventListener('touchmove',e=>{
+  if(spectrumDragging===null||spectrumDragging===undefined||!currentNode) return;
+  const track=document.querySelector(`.spectrum-track[data-si="${spectrumDragging}"]`);
+  if(!track) return;
+  const rect=track.getBoundingClientRect();
+  const pct=Math.max(0,Math.min(100,((e.touches[0].clientX-rect.left)/rect.width)*100));
+  const si=spectrumDragging;
+  document.getElementById(`sfill-${si}`).style.width=pct+'%';
+  document.getElementById(`sthumb-${si}`).style.left=pct+'%';
+  document.getElementById(`sval-${si}`).textContent=Math.round(pct)+'%';
+  const d2=getNodeData(currentNode.id); d2.spectrums[si]=pct; saveNodeData(currentNode.id,d2);
+},{passive:true});
+
+// ── VOICES TAB ────────────────────────────────────────────────────────────────
+function buildFeed(nodeId, col) {
+  const feed = document.getElementById('responses-feed');
+  feed.innerHTML='';
+  const data = getNodeData(nodeId);
+  const all = [...data.texts];
+  if(!all.length){
+    feed.innerHTML='<div class="response-empty">nothing here yet.<br>be the first.</div>';
+    return;
+  }
+  all.sort((a,b)=>b.ts-a.ts).forEach(item=>{
+    const div=document.createElement('div');
+    div.className='response-item';
+    div.style.setProperty('--node-color',col);
+    const d=new Date(item.ts);
+    div.innerHTML=`<div class="r-meta">${d.getDate()}/${d.getMonth()+1} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}</div>${item.text}`;
+    feed.appendChild(div);
+  });
+}
+
+// ── REFLECT TAB (AI) ──────────────────────────────────────────────────────────
+document.getElementById('ai-trigger').addEventListener('click', async ()=>{
+  if(!currentNode) return;
+  const data = getNodeData(currentNode.id);
+  const d = currentNode.data;
+  const col = CLUSTERS[d.cluster].hex;
+
+  const btn = document.getElementById('ai-trigger');
+  btn.textContent='synthesizing...'; btn.disabled=true;
+
+  const output = document.getElementById('ai-output');
+  output.textContent='';
+  output.style.display='block';
+  output.style.setProperty('--node-color',col);
+
+  const allTexts = data.texts.map(t=>t.text).filter(Boolean);
+  const allImpressions = data.impressions;
+  const specEntries = Object.entries(data.spectrums||{}).map(([si,val])=>{
+    const spec = (SPECTRUMS[d.cluster]||[])[parseInt(si)];
+    return spec ? `"${spec.label}": ${Math.round(val)}% toward "${spec.right}"` : null;
+  }).filter(Boolean);
+
+  let prompt;
+  if(!allTexts.length && !allImpressions.length) {
+    prompt = `The ExpLab community node is titled "${d.label.replace(/\n/g,' ')}". Its context: "${d.body}". The question it asks is: "${d.question}". No one has responded yet. As a poetic, honest reflection — speak to what this node is holding, what it might mean for a creative community in Tunis, and what answering might unlock. Keep it under 120 words. No corporate language. Speak directly, like a letter.`;
+  } else {
+    prompt = `The ExpLab community node is titled "${d.label.replace(/\n/g,' ')}". Its question: "${d.question}".
+    
+Community responses so far:
+${allTexts.length ? allTexts.map(t=>`- "${t}"`).join('\n') : '(no written responses yet)'}
+${allImpressions.length ? `\nImpressions selected: ${allImpressions.join(', ')}` : ''}
+${specEntries.length ? `\nSpectrum positions:\n${specEntries.join('\n')}` : ''}
+
+Synthesize what this community is holding around this theme. Be honest, poetic, and specific. Don't summarize blandly — find the tension, the hope, the thing underneath the words. Under 140 words. Speak like you know these people.`;
+  }
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:300,
+        stream:true,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+
+    const reader = resp.body.getReader();
+    const dec = new TextDecoder();
+    let buffer='';
+
+    while(true){
+      const {done,value}=await reader.read();
+      if(done) break;
+      buffer+=dec.decode(value,{stream:true});
+      const lines=buffer.split('\n');
+      buffer=lines.pop();
+      for(const line of lines){
+        if(!line.startsWith('data: ')) continue;
+        const json=line.slice(6).trim();
+        if(json==='[DONE]') continue;
+        try {
+          const parsed=JSON.parse(json);
+          if(parsed.type==='content_block_delta'&&parsed.delta?.text){
+            output.textContent+=parsed.delta.text;
+            output.scrollTop=output.scrollHeight;
+          }
+        } catch {}
+      }
+    }
+  } catch(e) {
+    output.textContent='The space is listening. Come back when more voices have gathered here.';
+  }
+
+  btn.textContent='✦ synthesize again'; btn.disabled=false;
+});
+
+// ── NODE HALO UPDATE ──────────────────────────────────────────────────────────
+function updateNodeHalo(nodeObj) {
+  if(nodeObj.haloGroup) { scene.remove(nodeObj.haloGroup); nodeObj.haloGroup=null; }
+  const data = getNodeData(nodeObj.id);
+  const total = data.texts.length + data.impressions.length;
+  if(total>0){
+    nodeObj.haloGroup = makeParticipationHalo(nodeObj.origPos, CLUSTERS[nodeObj.data.cluster].color, total);
+    scene.add(nodeObj.haloGroup);
+  }
+}
+
+function makeParticipationHalo(pos, col, count){
+  const g=new THREE.Group();
+  const spread=0.55+count*0.12;
+  for(let i=0;i<Math.min(count,16);i++){
+    const theta=(i/Math.min(count,16))*Math.PI*2;
+    const pm=new THREE.Mesh(new THREE.SphereGeometry(0.035,6,6),
+      new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:0.55,blending:THREE.AdditiveBlending}));
+    pm.position.set(Math.cos(theta)*spread, Math.sin(theta)*spread*0.25, Math.sin(theta)*spread);
+    g.add(pm);
+  }
+  g.position.copy(pos);
+  return g;
+}
+
+// ── FILTERS ───────────────────────────────────────────────────────────────────
+function applyFilter(cluster){
+  nodeObjects.forEach(n=>{
+    const show=cluster==='all'||n.data.cluster===cluster;
+    n.visible=show;
+    [n.inner,n.shell,n.halo,n.sprite,n.line].forEach(o=>o.visible=show);
+    if(n.haloGroup) n.haloGroup.visible=show;
+  });
+  closePanel();
+}
+document.querySelectorAll('.pill').forEach(p=>p.addEventListener('click',()=>{
+  document.querySelectorAll('.pill').forEach(x=>x.classList.remove('active'));
+  p.classList.add('active'); applyFilter(p.dataset.cluster);
+}));
+document.querySelectorAll('.leg').forEach(l=>l.addEventListener('click',()=>{
+  document.querySelectorAll('.pill').forEach(p=>p.classList.toggle('active',p.dataset.cluster===l.dataset.cluster));
+  applyFilter(l.dataset.cluster);
+}));
+
+// ── ANIMATE ───────────────────────────────────────────────────────────────────
+const clock=new THREE.Clock();
+function animate(){
+  requestAnimationFrame(animate);
+  const t=clock.getElapsedTime();
+  sph.theta+=(tSph.theta-sph.theta)*.07;
+  sph.phi+=(tSph.phi-sph.phi)*.07;
+  sph.r+=(tSph.r-sph.r)*.07;
+  if(!isDrag) tSph.theta+=.0006;
+  camera.position.set(
+    sph.r*Math.sin(sph.phi)*Math.sin(sph.theta),
+    sph.r*Math.cos(sph.phi),
+    sph.r*Math.sin(sph.phi)*Math.cos(sph.theta)
+  );
+  camera.lookAt(0,.5,0);
+
+  nucGroup.rotation.y=t*.18;
+  nucGroup.rotation.x=Math.sin(t*.12)*.08;
+  nucGroup.children.forEach((c,i)=>{
+    if(c.geometry?.type==='TorusGeometry'){ c.rotation.x+=.004*(i+1)*.6; c.rotation.z+=.003*(i+.5); }
+  });
+  coreMesh.material.opacity=0.08+Math.sin(t*1.8)*.07;
+
+  nodeObjects.forEach(n=>{
+    if(!n.visible) return;
+    const fy=Math.sin(t*.55+n.floatSeed)*.1;
+    const fx=Math.cos(t*.42+n.floatSeed*1.3)*.06;
+    const fz=Math.sin(t*.38+n.floatSeed*.7)*.07;
+    n.inner.position.set(n.origPos.x+fx,n.origPos.y+fy,n.origPos.z+fz);
+    n.shell.position.copy(n.inner.position);
+    n.halo.position.copy(n.inner.position);
+    n.sprite.position.set(n.inner.position.x,n.inner.position.y+n.r+.5,n.inner.position.z);
+    if(n.haloGroup){ n.haloGroup.position.set(n.origPos.x+fx,n.origPos.y+fy,n.origPos.z+fz); n.haloGroup.rotation.y=t*.4; }
+    n.shell.rotation.x+=.003; n.shell.rotation.y+=.004;
+    n.halo.rotation.z+=.005;
+    const hov=n===hoveredNode;
+    n.innerMat.opacity=hov?.88:.42;
+    n.shellMat.opacity=hov?.65:.28;
+    n.haloMat.opacity=hov?.45:.15;
+    n.spriteMat.opacity=hov?1:.78;
+    n.lineMat.opacity=hov?.3:.06;
+    const sc=hov?1.22:1; n.inner.scale.setScalar(sc); n.shell.scale.setScalar(sc);
+  });
+  renderer.render(scene,camera);
+}
+animate();
+window.addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+</script>
+</body>
+</html>
