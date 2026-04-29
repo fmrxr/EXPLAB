@@ -106,6 +106,8 @@ html, body { width:100%; height:100%; background:#060610; overflow:hidden; font-
 .imp-tag:hover { color:#e8e6f0; border-color:rgba(232,230,240,.3); }
 .imp-tag.selected { color:#e8e6f0; border-color:var(--node-color,#e94560); }
 .imp-tag.selected::before { opacity:.15; }
+.imp-count { font-family:'Space Mono',monospace; font-size:10px; color:var(--node-color,#e94560); margin-left:2px; opacity:.85; position:relative; z-index:1; }
+.imp-tag span.imp-count:empty { display:none; }
 .imp-count { font-size:9px; color:#5a5870; margin-left:5px; font-family:'Space Mono',monospace; }
 
 /* Spectrum slider */
@@ -186,15 +188,7 @@ html, body { width:100%; height:100%; background:#060610; overflow:hidden; font-
     <button class="pill" data-cluster="values">Values</button>
     <button class="pill" data-cluster="space">Space</button>
   </div>
-  <div id="legend">
-    <div class="leg" data-cluster="curiosity"><div class="leg-dot" style="background:#7f77dd"></div><div class="leg-label">Curiosity</div></div>
-    <div class="leg" data-cluster="community"><div class="leg-dot" style="background:#1d9e75"></div><div class="leg-label">Community</div></div>
-    <div class="leg" data-cluster="failure"><div class="leg-dot" style="background:#e94560"></div><div class="leg-label">Failure & Courage</div></div>
-    <div class="leg" data-cluster="tools"><div class="leg-dot" style="background:#ef9f27"></div><div class="leg-label">Tools & Skills</div></div>
-    <div class="leg" data-cluster="values"><div class="leg-dot" style="background:#5dcaa5"></div><div class="leg-label">Values</div></div>
-    <div class="leg" data-cluster="space"><div class="leg-dot" style="background:#d85a30"></div><div class="leg-label">Space & Place</div></div>
-  </div>
-  <div id="hint">drag · rotate<br>scroll · zoom<br>click · respond</div>
+  <!-- footer removed for cleaner room -->
 
   <!-- PANEL -->
   <div id="panel">
@@ -312,35 +306,50 @@ const SPECTRUMS = {
 };
 
 const RAW = [
-  { cluster:'curiosity', size:1.1, label:'For the joy\nof discovery',   body:'One of the first phrases in the founding session. Not "to build a career." For the joy of it. That phrasing places the act of finding above the value of what is found.', question:'What have you discovered recently — about yourself, about the city, about making something?' },
-  { cluster:'curiosity', size:0.8, label:'Bored by\nwhat exists',       body:'The things that exist already got boring. This is not apathy — it is restlessness. The creative drive that comes from dissatisfaction is one of the most powerful forces in any community.', question:'What specifically got boring for you? And what were you looking for that you weren\'t finding?' },
-  { cluster:'curiosity', size:0.7, label:'Explore new\npossibilities',  body:'The very first phrase from the founding session. Before community, before tools — the desire to explore. This community is fundamentally about epistemic restlessness.', question:'What possibility are you most excited to explore? What do you not know yet but want to?' },
-  { cluster:'curiosity', size:0.6, label:'Change\nthe world',           body:'Said in the same breath as "things got boring." The ambition is real and paired with pragmatism. ExpLab is not a place for passive dreaming.', question:'What specific thing — small or large — do you want to see different? Not in general. In particular.' },
-  { cluster:'curiosity', size:0.5, label:'Questions\nwelcome',          body:'One of the founding session\'s core red lines: silencing of questioning will not be tolerated. Every question is valid here.', question:'What question have you been afraid to ask here? Leave it. Anonymous is fine.' },
-  { cluster:'community', size:1.1, label:'Build\ncommunity',            body:'The third phrase from the founding session — and it came naturally, without prompting. Community is not a side effect of the work here. It is the work.', question:'What does a community that actually works feel like to you? Have you experienced one? Describe it.' },
-  { cluster:'community', size:0.9, label:'Uplift\neach other',          body:'"Create and gather, to build community, learn and uplift each other." Not to be uplifted — to uplift. The direction of the generosity matters.', question:'Who in this group have you uplifted, or who has uplifted you? You don\'t need to name them. Describe the moment.' },
-  { cluster:'community', size:0.75,label:'Sharing\nis the work',        body:'"Sharing" appeared twice in the founding session — unprompted, from different people. Sharing is not weakness here. It is the whole point.', question:'What\'s something you know how to do that you\'ve been keeping to yourself? What would it take to share it?' },
-  { cluster:'community', size:0.65,label:'19 humans',                   body:'Visual artists, sound engineers, architects, filmmakers, a writer, a chef, a technologist. 28 tools between them. Hardware scattered across the city. The collective is already rich.', question:'What\'s the most surprising skill or resource in this group that you\'ve discovered? What does it make possible?' },
-  { cluster:'community', size:0.5, label:'Materialize\nan idea',        body:'Someone came to the founding session simply to make something real that exists only in their head. The community as a materializing force.', question:'What idea lives only in your head right now? Describe it. Just get it out of your head and into the space.' },
-  { cluster:'failure',   size:1.3, label:'Fail',                        body:'One person\'s recurring word. Not a slogan — a confession. Their internal monologue returns to this word. This community needs to be a place where failure loses its sting.', question:'What have you failed at recently — in work, in making, in showing up? Say it plainly. This is a safe place to put it.' },
-  { cluster:'failure',   size:0.85,label:'Social\nanxiety',             body:'Two people named it at the founding session. The threshold of entry is high for this group. Showing up was already an act of courage.', question:'What was going through your head before you walked in? Be specific. Your honesty will help someone else.' },
-  { cluster:'failure',   size:0.7, label:'Cold,\nshivering\neven',      body:'The most honest thing said in the founding session. Shivering implies exposure. The physical body communicating what words couldn\'t carry.', question:'When have you felt most exposed in a creative context? What happened? What did you do with it?' },
-  { cluster:'failure',   size:0.6, label:'Courage\nto show up',         body:'For some people in this room, arriving was the hardest part. That courage should not be invisible. The community sees it.', question:'What made you come despite the hesitation? What was the thing that tipped you toward showing up?' },
-  { cluster:'tools',     size:1.0, label:'TouchDesigner\n& Ableton',    body:'6 members each — the two most developed specialist clusters. Real-time visuals meet experimental sound. A live AV performance waiting to happen.', question:'If you could build one thing using the tools in this group, what would it be? Describe it like you\'re pitching it in 30 seconds.' },
-  { cluster:'tools',     size:0.85,label:'Blender\nHoudini\nCinema 4D', body:'The 3D backbone. Kenza\'s Houdini + Sara Kanzari\'s LiDAR = spatial scanning into generative form. The group has serious depth here.', question:'What 3D or spatial project do you want to make? What\'s stopping you from starting it?' },
-  { cluster:'tools',     size:0.7, label:'Hardware\nlibrary',           body:'LiDAR, Kinect, 3D printer, laser cutter, synths, MIDI rigs, depth cameras. 11 pieces across 5 members. A community resource waiting to be activated.', question:'What hardware do you have that you\'d share with the group? What would you want to borrow? Name the exchange.' },
-  { cluster:'tools',     size:0.6, label:'VVVV',                        body:'Rafik is the only member with VVVV — rare, powerful, generative. He\'s currently just watching. His tool + Blits\'s projector rig + Molka\'s synths = a complete live AV setup.', question:'Rafik — what would it take to get you in the room? What are you waiting to see before you step in?' },
-  { cluster:'tools',     size:0.5, label:'Code\nneeds depth',           body:'Python and JS are present but at low proficiency. The gap between making things look good and making things behave interactively is code. It can be closed internally.', question:'Who wants to learn to code? Who can teach? Leave your name or just "I\'ll teach" / "I want to learn".' },
-  { cluster:'values',    size:1.0, label:'No\ngatekeeping',             body:'Named explicitly as a red line in the founding session. Knowledge should not be held as power. The door should not be beautiful and locked.', question:'Where have you experienced gatekeeping — in creative spaces, in education, in Tunis? What did it feel like? What should have happened instead?' },
-  { cluster:'values',    size:0.85,label:'Diversity\nis the point',     body:'A chef. A writer-engineer. A parametric architect. A sound designer. The diversity is not accidental — it is the mechanism.', question:'What has someone else in this group taught you that you couldn\'t have learned in your own discipline?' },
-  { cluster:'values',    size:0.7, label:'No\ngroupthink',              body:'One person named groupthink as the mechanism by which collectives become dangerous — not through malice but through suppression of dissent.', question:'What\'s something you disagree with about how ExpLab is being built? Say it. Dissent is a gift here.' },
-  { cluster:'values',    size:0.6, label:'borgden\nla7low',             body:'One person code-switched into Tunisian Arabic for this — a phrase for those who perform ease and openness while quietly holding the door closed.', question:'Have you seen this behavior anywhere here — or in any creative space in Tunis? What did it look like? What should we watch for?' },
-  { cluster:'values',    size:0.5, label:'Find yourself',               body:'"To find pieces of the puzzle that is me, and inspire others to find themselves." Self-discovery as a reason to gather. The community as a mirror.', question:'What piece of yourself have you found through making, or through being in this group? What are you still looking for?' },
-  { cluster:'space',     size:1.0, label:'Tunis\nas context',           body:'Centre-ville, Ariana, Ben Arous, La Marsa, Banlieue Sud. The city is distributed but walkable. The group can meet physically with minimal cost.', question:'What does Tunis give to this community that another city couldn\'t? What does it make harder?' },
-  { cluster:'space',     size:0.85,label:'First\nproject',              body:'The group has the tools, the hardware, the people. What it needs is a first shared output. Something public. Something that exists in the world.', question:'What should the first ExpLab project be? Describe it. Format, theme, who\'s involved, where it lives.' },
-  { cluster:'space',     size:0.7, label:'Session\nrhythm',             body:'The infrastructure is forming. What it needs is rhythm — a predictable cadence of meeting that reduces the anxiety of arrival.', question:'What session rhythm works for you? When, how often, how long, in what format? Be specific about your actual constraints.' },
-  { cluster:'space',     size:0.6, label:'Icebreaker\ndesign',          body:'For a group with social anxiety, the icebreaker is not optional. It should be making-based, not speaking-based. Build something. Hands before words.', question:'Design an icebreaker for this group. One you would actually want to do. What is it? Walk us through it.' },
-  { cluster:'space',     size:0.5, label:'Public\nartifact',            body:'The 90-day target: one thing that exists in the world and carries the ExpLab name. Not a logo. Not a post. Something made, performed, or installed.', question:'What form should the first public ExpLab artifact take? An installation? A performance? A publication? Something else entirely?' },
+  // ── CURIOSITY (Axis: anti-stagnation, epistemic restlessness) ──
+  { cluster:'curiosity', size:1.2, label:'For the joy\nof discovery',   body:'A founding-session phrase. Not "to build a career." For the joy of it. That phrasing places the act of finding above the value of what is found.', question:'What have you discovered recently — about yourself, about the city, about making something?' },
+  { cluster:'curiosity', size:1.0, label:'The things\nthat exist\ngot boring', body:'Verbatim from the manifesto. This is not an innovation statement — it is an escape statement. ExpLab was founded because the existing options felt inadequate. A powerful origin, but a fragile one: communities defined by what they are not lose coherence when the "other" fades.', question:'What specifically got boring for you? And what were you looking for that you weren\'t finding?' },
+  { cluster:'curiosity', size:0.85,label:'Explore new\npossibilites',   body:'The very first phrase typed into the manifesto. Before community, before tools — the desire to explore. This community is fundamentally about epistemic restlessness.', question:'What possibility are you most excited to explore? What do you not know yet but want to?' },
+  { cluster:'curiosity', size:0.7, label:'Change\nthe world',           body:'Said in the same breath as "got boring." Ambition paired with dissatisfaction. ExpLab is not a place for passive dreaming.', question:'What specific thing — small or large — do you want to see different? Not in general. In particular.' },
+  { cluster:'curiosity', size:0.55,label:'Questions\nwelcome',          body:'A core red line from the session: silencing of questioning will not be tolerated. Every question is valid here. No topic off-limits by default.', question:'What question have you been afraid to ask here? Leave it. Anonymous is fine.' },
+
+  // ── COMMUNITY (Axis 2: Identity & Belonging) ──
+  { cluster:'community', size:1.2, label:'Humans\nof ExpLab',           body:'12 practitioners. Visual artists, 3D modelers, sound engineers, filmmakers, an architect, a writer, a technologist — and "Adam — vegetables," preserved rather than corrected. The absurd is welcome. That is a latent psychological-safety signal.', question:'What does it mean to you to be a human of ExpLab? Not the role — the human.' },
+  { cluster:'community', size:1.0, label:'Build\ncommunity',            body:'One of the first phrases in the manifesto — and it came naturally, without prompting. Community is not a side effect of the work here. It is the work.', question:'What does a community that actually works feel like to you? Have you experienced one? Describe it.' },
+  { cluster:'community', size:0.9, label:'Sharing\nis the work',        body:'"Sharing" appeared multiple times in the session, unprompted, from different people. The group\'s deepest value. Not weakness — the whole point.', question:'What\'s something you know how to do that you\'ve been keeping to yourself? What would it take to share it?' },
+  { cluster:'community', size:0.75,label:'Uplift\neach other',          body:'"Create and gather, to build community, learn and uplift each other." The direction of the generosity matters — not to be uplifted, but to uplift.', question:'Who in this group have you uplifted, or who has uplifted you? You don\'t need to name them. Describe the moment.' },
+  { cluster:'community', size:0.6, label:'Materialize\nan idea',        body:'Someone came to the founding session simply to make something real that exists only in their head. The community as a materializing force.', question:'What idea lives only in your head right now? Describe it. Just get it out of your head and into the space.' },
+  { cluster:'community', size:0.5, label:'Find\nyourself',              body:'"To find pieces of the puzzle that is me, and inspire others to find themselves." Self-discovery as a reason to gather. The community as a mirror — but watch the risk: belonging without output becomes therapy, not practice.', question:'What piece of yourself have you found through making, or through being in this group? What are you still looking for?' },
+
+  // ── FAILURE & COURAGE (Axis 1 + Axis 3) ──
+  { cluster:'failure',   size:1.4, label:'Fail',                        body:'One person\'s recurring word. Not a slogan — a confession. Their internal monologue returns to this word. The community must create genuine safety around failure, not rhetorical safety. "Fail forward" will sound hollow to this person. They need failure treated as ordinary, not celebrated as heroic.', question:'What have you failed at recently — in work, in making, in showing up? Say it plainly. This is a safe place to put it.' },
+  { cluster:'failure',   size:1.0, label:'Social\nanxiety',             body:'Two members independently named it. A clinical term, reached for deliberately. The threshold of entry was high. Showing up was already an act of courage. The group\'s arrival rituals carry outsized weight for retention.', question:'What was going through your head before you walked in? Be specific. Your honesty will help someone else.' },
+  { cluster:'failure',   size:0.8, label:'Cold,\nshivering\neven',      body:'The most honest sentence in the session. Shivering implies exposure. The physical body communicating what words couldn\'t carry. This is the room\'s emotional weight before anything begins.', question:'When have you felt most exposed in a creative context? What happened? What did you do with it?' },
+  { cluster:'failure',   size:0.7, label:'Courage\nto show up',         body:'For some people in this room, arriving was the hardest part. That courage should not be invisible. The community sees it.', question:'What made you come despite the hesitation? What was the thing that tipped you toward showing up?' },
+  { cluster:'failure',   size:0.6, label:'Fails &\nLessons',            body:'A monthly ritual proposed by the report: structured failure-sharing. Facilitators go first to model vulnerability. Distinguishes productive failure from negligence. Removes shame from iteration.', question:'What\'s the most useful failure you\'ve had this year? What did it teach you that nothing else could?' },
+
+  // ── TOOLS & SKILLS (Axis 4: Knowledge Governance) ──
+  { cluster:'tools',     size:1.0, label:'8+\ndisciplines',             body:'Technology, visual arts, 3D modeling, sound engineering, music composition, filmmaking, architecture, writing — and one chef of vegetables. The native language of the group is demonstration, not articulation.', question:'What discipline outside your own do you most want to brush against? What collaboration would you make happen?' },
+  { cluster:'tools',     size:0.85,label:'Skills\nmapping',             body:'Month-1 ritual from the 90-day roadmap: every member documents 3 skills they have + 3 they want to learn. Mentorship without hierarchy. The map itself becomes a coordination layer.', question:'Drop your three: what you can teach, what you want to learn. Be concrete — name the tool, the technique, the question.' },
+  { cluster:'tools',     size:0.7, label:'Open\ndocumentation',         body:'The antidote to gatekeeping as the group grows. Decisions, skills, processes — written down where everyone can see them. Discord as institutional memory, not WhatsApp.', question:'What knowledge in this community is currently held in someone\'s head and nowhere else? Whose? What would it take to surface it?' },
+  { cluster:'tools',     size:0.6, label:'Hardware\nlibrary',           body:'Hardware scattered across the city — synths, cameras, projectors, depth sensors, fabrication tools. A community resource waiting to be activated through trust, not paperwork.', question:'What hardware do you have that you\'d share? What would you want to borrow? Name the exchange.' },
+  { cluster:'tools',     size:0.5, label:'Rotate\nfacilitation',        body:'Defense against informal hierarchy emerging around the founders (FMR, Seif). Whoever runs the room shapes the room. Rotate the role from session two onward.', question:'Whose facilitation style do you want to learn from? Who in this group would you trust to run the next session?' },
+
+  // ── VALUES (Axis 5: Conflict & Dissent + Trauma map) ──
+  { cluster:'values',    size:1.1, label:'No\ngatekeeping',             body:'Named explicitly as a red line. Knowledge should not be held as power. The door should not be beautiful and locked. Implication: radical transparency about how decisions are made and who makes them.', question:'Where have you experienced gatekeeping — in creative spaces, in education, in Tunis? What did it feel like? What should have happened instead?' },
+  { cluster:'values',    size:0.95,label:'No\ngroupthink',              body:'One member named groupthink specifically as the mechanism by which collectives turn dangerous — through suppression of dissent, not through malice. Without explicit conflict protocols, social anxiety will silence dissent and the group will produce exactly the groupthink it fears.', question:'What\'s something you disagree with about how ExpLab is being built? Say it. Dissent is a gift here.' },
+  { cluster:'values',    size:0.85,label:'Diversity\nis the point',     body:'"We are different. That is not a problem to be managed. It is the whole point." From the manifesto seed. Difference must be named as asset repeatedly, not just at founding.', question:'What has someone else in this group taught you that you couldn\'t have learned in your own discipline?' },
+  { cluster:'values',    size:0.75,label:'borgden\nla7low',             body:'Tunisian Arabic, code-switched in mid-session. The phrase for spaces that perform openness while practicing exclusion. The group already has language for the failure mode it most wants to avoid.', question:'Have you seen this behavior anywhere here — or in any creative space in Tunis? What did it look like? What should we watch for?' },
+  { cluster:'values',    size:0.65,label:'No\nintimidation',            body:'Named alongside bullying, discrimination, injustice. Not abstract principles — specific experiences in generalized language. Implication: a named conflict-resolution person from day one, not someday.', question:'Who should be the community steward? What qualities should that person have? What protections do they need to do the job?' },
+  { cluster:'values',    size:0.5, label:'Honest\nstruggle',            body:'"We will not perform ease when things are hard." From the manifesto seed. The group already named the failure mode it wants to avoid: performance of ease.', question:'What\'s actually hard for you right now in your practice? Not the polished version. The hard version.' },
+
+  // ── SPACE & PLACE (Axis 6: Identity vs Project — 90-day activation) ──
+  { cluster:'space',     size:1.1, label:'First public\nartifact',      body:'The 90-day target from the report. One thing that exists in the world and carries the ExpLab name. Not a logo. Not a post. Something made, performed, or installed. The group is currently united by shared feeling, not shared work — without a project, the energy will leak.', question:'What form should the first public ExpLab artifact take? An installation? A performance? A publication? Something else entirely?' },
+  { cluster:'space',     size:0.95,label:'Quarterly\nmicro-projects',   body:'Mixed-discipline teams, fixed scope, public output. The mechanism that turns a feeling-based community into a making-based one — without forcing premature commitment.', question:'What micro-project would you actually finish in 90 days with two other people from this group? Pitch it.' },
+  { cluster:'space',     size:0.8, label:'Session\nrhythm',             body:'For an anxious group, predictability is safety. Consistent cadence — even monthly — with a defined format reduces the ambiguity that fuels anxiety.', question:'What session rhythm works for you? When, how often, how long, in what format? Be specific about your actual constraints.' },
+  { cluster:'space',     size:0.7, label:'Icebreaker\ndesign',          body:'For a group with social anxiety, icebreakers are not optional — and they must be making-based, not speaking-based. No performing humor. No cold-calls. Pairs or trios. Hands before words.', question:'Design an icebreaker for this group. One you would actually want to do. What is it? Walk us through it.' },
+  { cluster:'space',     size:0.6, label:'WhatsApp /\nDiscord /\nIRL',  body:'Three layers, three jobs. WhatsApp = social only. Discord = structured collaboration & memory. In-person = where trust is actually built. The mistake is letting WhatsApp become the default — it destroys signal-to-noise and silences the quiet ones.', question:'Where do you currently spend your community attention? Where do you wish it lived instead?' },
+  { cluster:'space',     size:0.5, label:'Tunis\nas context',           body:'A walkable, distributed creative geography. The group can meet physically with minimal cost. The city is the substrate.', question:'What does Tunis give to this community that another city couldn\'t? What does it make harder?' },
 ];
 
 // ── STORAGE (localStorage per node) ───────────────────────────────────────────
@@ -353,6 +362,75 @@ function saveNodeData(nodeId, data) {
   try { localStorage.setItem(storageKey(nodeId), JSON.stringify(data)); } catch {}
 }
 
+// ── FIREBASE LAYER (shared community responses) ───────────────────────────────
+let _fb = null;
+function fbInit() {
+  if (_fb) return _fb;
+  try {
+    if (window.ExplabAuth?.init) { window.ExplabAuth.init(); }
+    if (firebase.apps.length) {
+      _fb = { db: firebase.database() };
+    }
+  } catch(e) { console.warn('Firebase not ready:', e); }
+  return _fb;
+}
+function fbAuthor() {
+  const s = (window.ExplabAuth?.getSession?.()) || null;
+  return s ? { uid: s.uid, name: s.name || s.email || 'member' }
+           : { uid: 'anon', name: 'anon' };
+}
+// Push a written response to /mindmap/{nodeId}/voices
+function fbPushVoice(nodeId, text) {
+  const fb = fbInit(); if (!fb) return;
+  const a = fbAuthor();
+  fb.db.ref(`mindmap/${nodeId}/voices`).push({
+    text, ts: Date.now(), by: a.uid, name: a.name
+  }).catch(e=>console.warn('voice push failed', e));
+}
+// Toggle an impression vote at /mindmap/{nodeId}/impressions/{tag}/{uid}
+function fbToggleImpression(nodeId, tag, on) {
+  const fb = fbInit(); if (!fb) return;
+  const a = fbAuthor();
+  const safeTag = tag.replace(/[.#$\/\[\]]/g,'_');
+  const ref = fb.db.ref(`mindmap/${nodeId}/impressions/${safeTag}/${a.uid}`);
+  if (on) ref.set({ ts: Date.now(), name: a.name }).catch(()=>{});
+  else    ref.remove().catch(()=>{});
+}
+// Save a spectrum position at /mindmap/{nodeId}/spectrums/{si}/{uid}
+function fbSaveSpectrum(nodeId, si, pct) {
+  const fb = fbInit(); if (!fb) return;
+  const a = fbAuthor();
+  fb.db.ref(`mindmap/${nodeId}/spectrums/${si}/${a.uid}`)
+    .set({ pct, ts: Date.now(), name: a.name }).catch(()=>{});
+}
+// Snapshot all community data for one node (for summary + counts)
+async function fbLoadNode(nodeId) {
+  const fb = fbInit(); if (!fb) return { voices:[], impressions:{}, spectrums:{} };
+  try {
+    const snap = await fb.db.ref(`mindmap/${nodeId}`).once('value');
+    const v = snap.val() || {};
+    return {
+      voices: Object.values(v.voices || {}),
+      impressions: v.impressions || {},   // { tag: { uid: {...} } }
+      spectrums:   v.spectrums   || {},   // { si:  { uid: {pct,...} } }
+    };
+  } catch(e) { return { voices:[], impressions:{}, spectrums:{} }; }
+}
+// Live subscription — calls cb(data) on every change
+function fbWatchNode(nodeId, cb) {
+  const fb = fbInit(); if (!fb) return ()=>{};
+  const ref = fb.db.ref(`mindmap/${nodeId}`);
+  const handler = ref.on('value', s => {
+    const v = s.val() || {};
+    cb({
+      voices: Object.values(v.voices || {}),
+      impressions: v.impressions || {},
+      spectrums:   v.spectrums   || {},
+    });
+  });
+  return () => ref.off('value', handler);
+}
+
 // ── ACTIVE STATE ──────────────────────────────────────────────────────────────
 let currentNode = null;
 let currentTab = 'write';
@@ -362,21 +440,21 @@ let spectrumValues = {};
 // ── THREE.JS SETUP ────────────────────────────────────────────────────────────
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x060610);
-scene.fog = new THREE.FogExp2(0x060610, 0.038);
+scene.fog = new THREE.FogExp2(0x060610, 0.022);
 const camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 0.1, 300);
-camera.position.set(0, 0, 22);
+camera.position.set(0, 0, 36);
 const renderer = new THREE.WebGLRenderer({ antialias:true });
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.setSize(innerWidth, innerHeight);
 document.getElementById('three').appendChild(renderer.domElement);
 
 const CENTERS = {
-  curiosity: new THREE.Vector3(-5.5, 4.5, 1.5),
-  community: new THREE.Vector3( 5.5, 4.0, 1.5),
-  failure:   new THREE.Vector3( 0.5,-4.0, 6.0),
-  tools:     new THREE.Vector3( 6.0,-3.0,-2.5),
-  values:    new THREE.Vector3(-4.5, 0.5,-6.0),
-  space:     new THREE.Vector3(-5.5,-4.0,-1.5),
+  curiosity: new THREE.Vector3(-11.0,  8.5,  3.0),
+  community: new THREE.Vector3( 11.0,  8.0,  3.0),
+  failure:   new THREE.Vector3(  1.0, -8.5, 11.5),
+  tools:     new THREE.Vector3( 12.0, -6.0, -5.0),
+  values:    new THREE.Vector3( -9.0,  1.0,-12.0),
+  space:     new THREE.Vector3(-11.0, -8.0, -3.0),
 };
 
 // Dust cloud
@@ -428,7 +506,7 @@ function makeLabel(label,hexColor){
   lines.forEach((l,i)=>cx.fillText(l,160,80-totalH/2+i*lh+lh*0.8));
   const tex=new THREE.CanvasTexture(c);
   const mat=new THREE.SpriteMaterial({map:tex,transparent:true,opacity:0.88,depthWrite:false,blending:THREE.AdditiveBlending});
-  const sp=new THREE.Sprite(mat); sp.scale.set(3.2,1.6,1);
+  const sp=new THREE.Sprite(mat); sp.scale.set(4.4,2.2,1);
   return {sprite:sp,mat};
 }
 
@@ -459,18 +537,32 @@ function makeParticipationHalo(pos, col, count) {
   return group;
 }
 
+// Group RAW by cluster so we can lay each cluster out as a ring around its center.
+const _byCluster = {};
+RAW.forEach((d,i)=>{ (_byCluster[d.cluster] ||= []).push({d,i}); });
+const _slot = {}; // {cluster: index_within_cluster}
+
 const nodeObjects = [];
 RAW.forEach((d,i)=>{
   const center = CENTERS[d.cluster];
   const col = CLUSTERS[d.cluster].color;
   const hex = CLUSTERS[d.cluster].hex;
-  const spread = 2.6;
+
+  // Deterministic ring placement: each node gets its own slot around the cluster center.
+  const peers = _byCluster[d.cluster];
+  const slot  = (_slot[d.cluster] = (_slot[d.cluster] ?? -1) + 1);
+  const n     = peers.length;
+  const ringR = 3.6;                             // distance from cluster center
+  const tilt  = (d.cluster.charCodeAt(0)%5)*0.18; // slight per-cluster plane tilt
+  const theta = (slot / n) * Math.PI * 2 + tilt;
+  const phi   = ((slot % 3) - 1) * 0.55;          // up/down offset so rings aren't flat
+  const jitter = 0.35;
   const pos = new THREE.Vector3(
-    center.x+(Math.random()-.5)*spread,
-    center.y+(Math.random()-.5)*spread,
-    center.z+(Math.random()-.5)*spread
+    center.x + Math.cos(theta)*ringR + (Math.random()-.5)*jitter,
+    center.y + Math.sin(phi)*1.6     + (Math.random()-.5)*jitter,
+    center.z + Math.sin(theta)*ringR + (Math.random()-.5)*jitter
   );
-  const r = d.size*0.32;
+  const r = d.size*0.42;
 
   const innerMat = new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:0.45,blending:THREE.AdditiveBlending,depthWrite:false});
   const inner = new THREE.Mesh(new THREE.SphereGeometry(r*.5,16,16),innerMat);
@@ -601,6 +693,8 @@ function openPanel(nodeObj) {
 
 function closePanel(){
   currentNode = null;
+  if (_feelUnsub)   { try{_feelUnsub();}catch{}   _feelUnsub=null; }
+  if (_voicesUnsub) { try{_voicesUnsub();}catch{} _voicesUnsub=null; }
   const p=document.getElementById('panel');
   p.classList.remove('visible');
   setTimeout(()=>p.style.display='none',350);
@@ -627,46 +721,81 @@ textarea.addEventListener('input',()=>{
 
 document.getElementById('free-submit').addEventListener('click',()=>{
   if(!currentNode || !textarea.value.trim()) return;
+  const txt = textarea.value.trim();
   const data = getNodeData(currentNode.id);
-  data.texts.push({ text: textarea.value.trim(), ts: Date.now() });
+  data.texts.push({ text: txt, ts: Date.now() });
   saveNodeData(currentNode.id, data);
+  fbPushVoice(currentNode.id, txt);
   textarea.value='';
   document.getElementById('char-count').textContent='0 / 280';
   document.getElementById('write-ok').style.display='block';
   updateNodeHalo(currentNode);
+  flashHalo(currentNode);
   setTimeout(()=>document.getElementById('write-ok').style.display='none',2500);
 });
 
 // ── FEEL TAB ──────────────────────────────────────────────────────────────────
+let _feelUnsub = null;
 function buildImpressions(nodeId, cluster, col) {
   const zone = document.getElementById('impression-zone');
   zone.innerHTML = '';
   const tags = IMPRESSIONS[cluster] || [];
   const data = getNodeData(nodeId);
-  tags.forEach(tag=>{
-    const btn = document.createElement('button');
-    btn.className = 'imp-tag';
-    btn.style.setProperty('--node-color', col);
-    const isSelected = data.impressions.includes(tag);
-    if(isSelected) btn.classList.add('selected');
-    const count = 0; // future: shared counts
-    btn.innerHTML = `${tag}`;
-    btn.addEventListener('click',()=>{
-      const d2 = getNodeData(nodeId);
-      if(d2.impressions.includes(tag)){
-        d2.impressions = d2.impressions.filter(x=>x!==tag);
-        btn.classList.remove('selected');
-      } else {
-        d2.impressions.push(tag);
-        btn.classList.add('selected');
+  const me = (window.ExplabAuth?.getSession?.()?.uid) || 'anon';
+
+  function safe(t){ return t.replace(/[.#$\/\[\]]/g,'_'); }
+  function render(remote) {
+    tags.forEach(tag=>{
+      const btnId = `imp_${nodeId}_${safe(tag)}`;
+      let btn = document.getElementById(btnId);
+      const myVote = data.impressions.includes(tag);
+      const voters = (remote.impressions?.[safe(tag)]) || {};
+      const count = Object.keys(voters).length;
+      const others = Object.values(voters).map(v=>v.name).filter(n=>n && n!=='anon').slice(0,3);
+      if (!btn) {
+        btn = document.createElement('button');
+        btn.id = btnId;
+        btn.className = 'imp-tag';
+        btn.style.setProperty('--node-color', col);
+        btn.addEventListener('click',()=>{
+          const d2 = getNodeData(nodeId);
+          const wasOn = d2.impressions.includes(tag);
+          if (wasOn) {
+            d2.impressions = d2.impressions.filter(x=>x!==tag);
+            btn.classList.remove('selected');
+          } else {
+            d2.impressions.push(tag);
+            btn.classList.add('selected');
+          }
+          saveNodeData(nodeId, d2);
+          fbToggleImpression(nodeId, tag, !wasOn);
+          updateNodeHalo(currentNode);
+          pulseFeelOk(wasOn ? 'unsaid' : 'felt');
+          flashHalo(currentNode);
+        });
+        zone.appendChild(btn);
       }
-      saveNodeData(nodeId, d2);
-      updateNodeHalo(currentNode);
-      document.getElementById('feel-ok').style.display='block';
-      setTimeout(()=>document.getElementById('feel-ok').style.display='none',1800);
+      btn.classList.toggle('selected', myVote);
+      const countLabel = count>0 ? ` · ${count}` : '';
+      const tip = others.length ? ` (${others.join(', ')}${count>others.length?'…':''})` : '';
+      btn.innerHTML = `${tag}<span class="imp-count">${countLabel}</span>`;
+      btn.title = `${count} ${count===1?'person feels':'people feel'} this${tip}`;
     });
-    zone.appendChild(btn);
-  });
+  }
+  // initial paint with empty remote
+  render({impressions:{}});
+  // subscribe to live counts
+  if (_feelUnsub) { try{_feelUnsub();}catch{} _feelUnsub=null; }
+  _feelUnsub = fbWatchNode(nodeId, render);
+}
+
+function pulseFeelOk(label) {
+  const el = document.getElementById('feel-ok');
+  if (!el) return;
+  el.textContent = '✓ ' + label;
+  el.style.display='block';
+  clearTimeout(window._feelOkTimer);
+  window._feelOkTimer = setTimeout(()=>el.style.display='none', 1800);
 }
 
 // ── SPECTRUM TAB ──────────────────────────────────────────────────────────────
@@ -706,6 +835,7 @@ function buildSpectrums(nodeId, cluster, col) {
       const d2=getNodeData(nodeId);
       d2.spectrums[si]=pct;
       saveNodeData(nodeId,d2);
+      fbSaveSpectrum(nodeId, si, pct);
       document.getElementById('spectrum-ok').style.display='block';
       clearTimeout(window._specOkTimer);
       window._specOkTimer=setTimeout(()=>document.getElementById('spectrum-ok').style.display='none',1500);
@@ -726,10 +856,10 @@ window.addEventListener('mousemove',e=>{
   document.getElementById(`sfill-${si}`).style.width=pct+'%';
   document.getElementById(`sthumb-${si}`).style.left=pct+'%';
   document.getElementById(`sval-${si}`).textContent=Math.round(pct)+'%';
-  const d2=getNodeData(currentNode.id); d2.spectrums[si]=pct; saveNodeData(currentNode.id,d2);
+  const d2=getNodeData(currentNode.id); d2.spectrums[si]=pct; saveNodeData(currentNode.id,d2); fbSaveSpectrum(currentNode.id, si, pct);
 });
-window.addEventListener('mouseup',()=>{ spectrumDragging=null; });
-window.addEventListener('touchend',()=>{ spectrumDragging=null; });
+window.addEventListener('mouseup',()=>{ if(spectrumDragging!==null && currentNode) flashHalo(currentNode); spectrumDragging=null; });
+window.addEventListener('touchend',()=>{ if(spectrumDragging!==null && currentNode) flashHalo(currentNode); spectrumDragging=null; });
 window.addEventListener('touchmove',e=>{
   if(spectrumDragging===null||spectrumDragging===undefined||!currentNode) return;
   const track=document.querySelector(`.spectrum-track[data-si="${spectrumDragging}"]`);
@@ -740,27 +870,39 @@ window.addEventListener('touchmove',e=>{
   document.getElementById(`sfill-${si}`).style.width=pct+'%';
   document.getElementById(`sthumb-${si}`).style.left=pct+'%';
   document.getElementById(`sval-${si}`).textContent=Math.round(pct)+'%';
-  const d2=getNodeData(currentNode.id); d2.spectrums[si]=pct; saveNodeData(currentNode.id,d2);
+  const d2=getNodeData(currentNode.id); d2.spectrums[si]=pct; saveNodeData(currentNode.id,d2); fbSaveSpectrum(currentNode.id, si, pct);
 },{passive:true});
 
 // ── VOICES TAB ────────────────────────────────────────────────────────────────
+let _voicesUnsub = null;
 function buildFeed(nodeId, col) {
   const feed = document.getElementById('responses-feed');
-  feed.innerHTML='';
-  const data = getNodeData(nodeId);
-  const all = [...data.texts];
-  if(!all.length){
-    feed.innerHTML='<div class="response-empty">nothing here yet.<br>be the first.</div>';
-    return;
+  feed.innerHTML='<div class="response-empty">listening…</div>';
+
+  function render(remoteVoices){
+    feed.innerHTML='';
+    const local = getNodeData(nodeId).texts.map(t=>({text:t.text, ts:t.ts, name:'you'}));
+    // De-dupe: if a local text matches a remote voice (same text within 5s), skip the local.
+    const remoteSet = new Set(remoteVoices.map(v=>`${v.text}|${Math.floor(v.ts/5000)}`));
+    const localFiltered = local.filter(l=>!remoteSet.has(`${l.text}|${Math.floor(l.ts/5000)}`));
+    const all = [...remoteVoices, ...localFiltered];
+    if(!all.length){
+      feed.innerHTML='<div class="response-empty">nothing here yet.<br>be the first.</div>';
+      return;
+    }
+    all.sort((a,b)=>b.ts-a.ts).forEach(item=>{
+      const div=document.createElement('div');
+      div.className='response-item';
+      div.style.setProperty('--node-color',col);
+      const d=new Date(item.ts);
+      const who = item.name && item.name!=='anon' ? item.name : 'anon';
+      div.innerHTML=`<div class="r-meta">${who} · ${d.getDate()}/${d.getMonth()+1} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}</div>${item.text}`;
+      feed.appendChild(div);
+    });
   }
-  all.sort((a,b)=>b.ts-a.ts).forEach(item=>{
-    const div=document.createElement('div');
-    div.className='response-item';
-    div.style.setProperty('--node-color',col);
-    const d=new Date(item.ts);
-    div.innerHTML=`<div class="r-meta">${d.getDate()}/${d.getMonth()+1} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}</div>${item.text}`;
-    feed.appendChild(div);
-  });
+
+  if (_voicesUnsub) { try{_voicesUnsub();}catch{} _voicesUnsub=null; }
+  _voicesUnsub = fbWatchNode(nodeId, remote => render(remote.voices || []));
 }
 
 // ── REFLECT TAB (AI) ──────────────────────────────────────────────────────────
@@ -778,22 +920,47 @@ document.getElementById('ai-trigger').addEventListener('click', async ()=>{
   output.style.display='block';
   output.style.setProperty('--node-color',col);
 
-  const allTexts = data.texts.map(t=>t.text).filter(Boolean);
-  const allImpressions = data.impressions;
-  const specEntries = Object.entries(data.spectrums||{}).map(([si,val])=>{
-    const spec = (SPECTRUMS[d.cluster]||[])[parseInt(si)];
-    return spec ? `"${spec.label}": ${Math.round(val)}% toward "${spec.right}"` : null;
+  // Pull community-wide responses (everyone), not just this device's local data.
+  const remote = await fbLoadNode(currentNode.id);
+  const allTexts = [
+    ...remote.voices.map(v=>v.text).filter(Boolean),
+    ...data.texts.map(t=>t.text).filter(Boolean)
+  ];
+  // Dedupe identical strings.
+  const seen = new Set();
+  const dedupedTexts = allTexts.filter(t => {
+    const k = t.trim().toLowerCase();
+    if (seen.has(k)) return false; seen.add(k); return true;
+  });
+  // Impression tallies (community-wide), then fall back to local user picks.
+  const impressionTallies = Object.entries(remote.impressions||{}).map(([tag,voters])=>{
+    const n = Object.keys(voters||{}).length;
+    return n>0 ? `${tag.replace(/_/g,' ')} (${n})` : null;
   }).filter(Boolean);
-
+  const allImpressions = impressionTallies.length
+    ? impressionTallies
+    : data.impressions;
+  // Spectrum: average across all voters per slider, plus local fallback.
+  const specEntries = (SPECTRUMS[d.cluster]||[]).map((spec, si)=>{
+    const remoteVotes = Object.values(remote.spectrums?.[si]||{}).map(x=>x.pct).filter(p=>typeof p==='number');
+    if (remoteVotes.length) {
+      const avg = remoteVotes.reduce((a,b)=>a+b,0)/remoteVotes.length;
+      return `"${spec.label}": community average ${Math.round(avg)}% toward "${spec.right}" (${remoteVotes.length} ${remoteVotes.length===1?'voice':'voices'})`;
+    }
+    if (data.spectrums?.[si] !== undefined) {
+      return `"${spec.label}": ${Math.round(data.spectrums[si])}% toward "${spec.right}" (you only)`;
+    }
+    return null;
+  }).filter(Boolean);
   let prompt;
-  if(!allTexts.length && !allImpressions.length) {
+  if(!dedupedTexts.length && !allImpressions.length && !specEntries.length) {
     prompt = `The ExpLab community node is titled "${d.label.replace(/\n/g,' ')}". Its context: "${d.body}". The question it asks is: "${d.question}". No one has responded yet. As a poetic, honest reflection — speak to what this node is holding, what it might mean for a creative community in Tunis, and what answering might unlock. Keep it under 120 words. No corporate language. Speak directly, like a letter.`;
   } else {
     prompt = `The ExpLab community node is titled "${d.label.replace(/\n/g,' ')}". Its question: "${d.question}".
-    
-Community responses so far:
-${allTexts.length ? allTexts.map(t=>`- "${t}"`).join('\n') : '(no written responses yet)'}
-${allImpressions.length ? `\nImpressions selected: ${allImpressions.join(', ')}` : ''}
+
+Community voices so far (${remote.voices.length} from the room, plus this device):
+${dedupedTexts.length ? dedupedTexts.map(t=>`- "${t}"`).join('\n') : '(no written responses yet)'}
+${allImpressions.length ? `\nFeelings the room picked: ${Array.isArray(allImpressions)?allImpressions.join(', '):''}` : ''}
 ${specEntries.length ? `\nSpectrum positions:\n${specEntries.join('\n')}` : ''}
 
 Synthesize what this community is holding around this theme. Be honest, poetic, and specific. Don't summarize blandly — find the tension, the hope, the thing underneath the words. Under 140 words. Speak like you know these people.`;
@@ -850,6 +1017,27 @@ function updateNodeHalo(nodeObj) {
     nodeObj.haloGroup = makeParticipationHalo(nodeObj.origPos, CLUSTERS[nodeObj.data.cluster].color, total);
     scene.add(nodeObj.haloGroup);
   }
+}
+
+// Brief glow pulse on a node when the user votes — feedback that "the room felt it"
+function flashHalo(nodeObj){
+  if(!nodeObj) return;
+  const start = performance.now();
+  const baseOpacity = nodeObj.shellMat.opacity;
+  const baseInner   = nodeObj.innerMat.opacity;
+  function step(t){
+    const k = (t-start)/650;
+    if(k>=1){
+      nodeObj.shellMat.opacity = baseOpacity;
+      nodeObj.innerMat.opacity = baseInner;
+      return;
+    }
+    const g = Math.sin(k*Math.PI);
+    nodeObj.shellMat.opacity = baseOpacity + g*0.55;
+    nodeObj.innerMat.opacity = baseInner   + g*0.45;
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
 }
 
 function makeParticipationHalo(pos, col, count){
