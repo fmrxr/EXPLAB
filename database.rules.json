@@ -25,6 +25,11 @@
       ".write": "auth != null"
     },
 
+    "manifesto-workbook": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+
     "$other": {
       ".read": "auth != null && (root.child('accounts').child(auth.uid).child('role').val() === 'owner' || root.child('accounts').child(auth.uid).child('role').val() === 'admin')",
       ".write": "auth != null && (root.child('accounts').child(auth.uid).child('role').val() === 'owner' || root.child('accounts').child(auth.uid).child('role').val() === 'admin')"
