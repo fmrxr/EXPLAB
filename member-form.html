@@ -738,12 +738,14 @@ async function goNext(){
     if(!passEl.value || passEl.value.length<8){passEl.focus();return;}
 
     // Skip pre-check if the user is already signed in (filling profile post-claim).
-    if(!firebase.auth().currentUser){
+    let signedIn = false;
+    try { signedIn = !!(firebase?.auth?.().currentUser); } catch(_) { signedIn = false; }
+    if(!signedIn){
       const btn=document.getElementById('btnNext');
       const prev=btn.textContent;
       btn.textContent='Checking…'; btn.disabled=true;
       try{
-        const methods=await firebase.auth().fetchSignInMethodsForEmail(emailEl.value.trim());
+        const methods = await firebase.auth().fetchSignInMethodsForEmail(emailEl.value.trim());
         if(methods && methods.length){
           document.getElementById('emailExistsErr').style.display='block';
           emailEl.focus();
@@ -752,9 +754,11 @@ async function goNext(){
         }
         document.getElementById('emailExistsErr').style.display='none';
       }catch(e){
-        console.warn('email check failed',e);
+        // Don't block the user if the pre-check fails — duplicates are caught at submit.
+        console.warn('email pre-check failed, continuing:', e);
+      } finally {
+        btn.textContent=prev; btn.disabled=false;
       }
-      btn.textContent=prev; btn.disabled=false;
     }
   }
 
@@ -926,6 +930,11 @@ function exportJSON(){
 
 // ── INIT ───────────────────────────────────────────
 document.addEventListener('DOMContentLoaded',()=>{
+  // Initialize Firebase up-front so the Step 1 duplicate-email check can run.
+  try {
+    if (window.ExplabAuth?.init) window.ExplabAuth.init();
+    else if (typeof firebase !== 'undefined' && !firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+  } catch(e) { console.warn('Firebase init failed:', e); }
   buildSkillRows();
   initEmailJS();
   showStep(1);
