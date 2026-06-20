@@ -651,7 +651,7 @@ function pushToFirebase(d){
   const db=getDB();if(!db)return Promise.resolve();
   const key=(d.identity?.name||'member').replace(/[^a-z0-9]/gi,'_').toLowerCase()+'_'+Date.now();
   return db.ref('members/'+key).set(d)
-    .then(()=>{console.log('Firebase ✓');return key;})
+    .then(()=>{return key;})
     .catch(e=>{console.warn('Firebase write:',e);throw e;});
 }
 
@@ -794,15 +794,17 @@ async function goNext(){
     // Lock submission
     submitted = true;
 
-    console.log("🚀 Submitting...", data);
-
     try {
       await registerAndSubmit(data);
       sendEmail(JSON.stringify(data,null,2), data.identity?.name || 'Anonymous');
       setTimeout(()=>{
         buildCard();
         showStep(9);
-        startDashboardRedirect(5);
+        if(window.__WAITLIST_EVENT){
+          joinWaitlistAfterSignup(window.__WAITLIST_EVENT, data.identity?.email || '');
+        } else {
+          startDashboardRedirect(5);
+        }
       }, 50);
     } catch (err) {
       submitted = false;
@@ -941,7 +943,35 @@ document.addEventListener('DOMContentLoaded',()=>{
   buildSkillRows();
   initEmailJS();
   showStep(1);
+  // Waitlist intent passed from the homepage "Join the waitlist" form
+  try{
+    const q=new URLSearchParams(location.search);
+    const wl=q.get('waitlist');
+    if(wl){
+      window.__WAITLIST_EVENT=wl;
+      const em=q.get('email')||'';
+      const el=document.getElementById('email');
+      if(el&&em) el.value=em;
+    }
+  }catch(_){}
 });
+
+function joinWaitlistAfterSignup(event,email){
+  const LABEL = event==='workshop-001' ? 'Workshop #001' : event;
+  try{
+    emailjs.send(EJS_SERVICE_ID,EJS_TEMPLATE_ID,{
+      to_email:TARGET_EMAIL, from_name:'EXPLAB Waitlist', member_name:email||'',
+      json_data:JSON.stringify({event:LABEL,email,existing_member:false,via:'member-form',at:new Date().toISOString()},null,2),
+      message:'Waitlist signup — '+LABEL+' (new member)\nEmail: '+(email||''),
+      submitted_at:new Date().toLocaleString()
+    });
+  }catch(_){}
+  // Best-effort Firebase write (member is authenticated right after signup)
+  try{ firebase.database().ref('waitlist/'+event).push({email,member:true,via:'member-form',at:Date.now()}); }catch(_){}
+  try{ localStorage.removeItem('xl_waitlist'); }catch(_){}
+  setTimeout(()=>{ location.replace('index.html?waitlisted=1#workshop'); }, 3500);
+}
+window.joinWaitlistAfterSignup=joinWaitlistAfterSignup;
 
 function goToDashboard(){ location.replace('dashboard.html'); }
 function startDashboardRedirect(seconds){

@@ -15,6 +15,16 @@
       ".write": "auth != null"
     },
 
+    "waitlist": {
+      ".read": "auth != null && (root.child('accounts').child(auth.uid).child('role').val() === 'owner' || root.child('accounts').child(auth.uid).child('role').val() === 'admin')",
+      "$event": {
+        "$entry": {
+          ".write": "!data.exists() || (auth != null && (root.child('accounts').child(auth.uid).child('role').val() === 'owner' || root.child('accounts').child(auth.uid).child('role').val() === 'admin'))",
+          ".validate": "newData.hasChild('email') && newData.child('email').isString()"
+        }
+      }
+    },
+
     "manifesto": {
       ".read": true,
       ".write": "auth != null"

@@ -569,6 +569,7 @@ html,body{min-height:100vh;background:var(--blk);color:var(--tx);font-family:'Sp
     <div class="sb-item" onclick="sv('tools',this)"><div class="sb-dot" style="background:var(--blu)"></div><span>Tools Analysis</span></div>
     <div class="sb-sec">System</div>
     <div class="sb-item" onclick="sv('log',this)"><div class="sb-dot"></div><span>Activity Log</span></div>
+    <div class="sb-item" id="waitlistNav" style="display:none" onclick="sv('waitlist',this)"><div class="sb-dot" style="background:var(--grn)"></div><span>Waitlist</span></div>
     <div class="sb-item" id="adminNav" style="display:none" onclick="sv('admin',this)"><div class="sb-dot" style="background:var(--red)"></div><span>Admin <span style="font-size:9px;background:var(--red);color:#fff;padding:1px 5px;margin-left:3px">FMR</span></span></div>
   </nav>
   <div class="sb-bot">
@@ -713,6 +714,31 @@ html,body{min-height:100vh;background:var(--blk);color:var(--tx);font-family:'Sp
       <div class="admin-st">Session log</div>
       <div id="adminLogFull"></div>
       <button class="au-btn del" style="margin-top:.75rem" onclick="clearLog()">× Clear log</button>
+    </div>
+  </div>
+
+  <!-- ══ WAITLIST ══ -->
+  <div class="view" id="view-waitlist">
+    <div class="ph">
+      <div><div class="ph-title">Waitlist — Workshop #001 <span class="ph-badge admin">FMR</span></div><div class="ph-sub" id="wlCount">—</div></div>
+      <div><button class="bti" onclick="renderWaitlist()" style="font-size:11px">↻ Refresh</button></div>
+    </div>
+    <div class="admin-section">
+      <div class="admin-st">Add participant</div>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">
+        <input class="adm-input" id="wlNewEmail" type="email" placeholder="email@example.com" style="flex:1;min-width:180px" onkeydown="if(event.key==='Enter')wlAdd()">
+        <input class="adm-input" id="wlNewName" placeholder="Name (optional)" style="flex:1;min-width:140px" onkeydown="if(event.key==='Enter')wlAdd()">
+        <label style="display:flex;align-items:center;gap:.4rem;font-size:12px;color:var(--tx2);white-space:nowrap"><input type="checkbox" id="wlNewMember"> Member</label>
+        <button class="au-btn" onclick="wlAdd()" style="padding:6px 14px">+ Add</button>
+      </div>
+    </div>
+    <div class="admin-section">
+      <div class="admin-st">Applicants</div>
+      <table class="data-table">
+        <thead><tr><th>Email</th><th>Name</th><th>Status</th><th>Date</th><th style="width:1%">Actions</th></tr></thead>
+        <tbody id="wlTbody"></tbody>
+      </table>
+      <div style="font-size:11px;color:var(--tx3);margin-top:.5rem">Public signups land here once the <span style="color:var(--or);font-family:'Courier Prime',monospace">waitlist</span> database rules are deployed. You can always add, edit, or remove participants manually.</div>
     </div>
   </div>
 
@@ -957,6 +983,7 @@ function finishLogin(name,guest=false){
   document.getElementById('appBody').style.display='flex';
   document.getElementById('ubn').textContent=name;
   document.getElementById('adminNav').style.display=isAdmin?'flex':'none';
+  { const wn=document.getElementById('waitlistNav'); if(wn) wn.style.display=isAdmin?'flex':'none'; }
   const sbBot=document.querySelector('.sb-bot');
   if(sbBot)sbBot.style.display=isOwner?'':'none';
   logEv(name,'login','Authenticated');
@@ -1135,7 +1162,7 @@ function setupDrop(){
 function sv(name,btn){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.querySelectorAll('.sb-item').forEach(b=>b.classList.remove('active'));
-  if(members.length===0&&name!=='log'&&name!=='admin'&&name!=='roadmap'&&name!=='tools'&&name!=='overview'&&name!=='directory'){
+  if(members.length===0&&name!=='log'&&name!=='admin'&&name!=='roadmap'&&name!=='tools'&&name!=='overview'&&name!=='directory'&&name!=='waitlist'){
     document.getElementById('view-empty').classList.add('active');
     return;
   }
@@ -1143,10 +1170,78 @@ function sv(name,btn){
   if(el)el.classList.add('active');
   if(btn)btn.classList.add('active');
   const fn={overview:renderOverview,skills:renderSkills,hardware:renderHardware,
-             gaps:renderGaps,matches:renderMatches,directory:renderDirectory,log:renderLog,admin:renderAdmin,roadmap:renderRoadmap,tools:renderTools};
+             gaps:renderGaps,matches:renderMatches,directory:renderDirectory,log:renderLog,admin:renderAdmin,roadmap:renderRoadmap,tools:renderTools,waitlist:renderWaitlist};
   fn[name]?.();
   if(currentUser&&name!=='empty')logEv(currentUser,'view','→ '+name);
 }
+
+// ═══════════════════════════════════════════════════
+//  WAITLIST  (Workshop #001)
+// ═══════════════════════════════════════════════════
+const WL_EVENT='workshop-001';
+let _wlCache={}, _wlSubscribed=false, _wlError=null;
+function wlRef(){return (db||firebase.database()).ref('waitlist/'+WL_EVENT);}
+const wlValid=e=>/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(e||'').trim());
+// Paint the table from the in-memory cache (kept fresh by the live listener).
+function wlPaint(){
+  const host=document.getElementById('wlTbody'); if(!host)return;
+  if(_wlError){host.innerHTML=`<tr><td colspan="5" style="color:var(--red);padding:1rem">Could not sync waitlist: ${escTools(_wlError)}</td></tr>`;return;}
+  const v=_wlCache||{};
+  const keys=Object.keys(v).sort((a,b)=>((v[b]||{}).at||0)-((v[a]||{}).at||0));
+  const ct=document.getElementById('wlCount'); if(ct)ct.textContent=keys.length+(keys.length===1?' applicant':' applicants');
+  host.innerHTML = keys.length ? keys.map(k=>{
+    const e=v[k]||{};
+    const d=e.at?new Date(e.at).toLocaleDateString():'—';
+    const status=e.member?'<span style="color:var(--grn)">Member</span>':'<span style="color:var(--tx3)">Guest</span>';
+    return `<tr><td>${escTools(e.email||'—')}</td><td>${escTools(e.name||'—')}</td><td>${status}</td>`+
+      `<td style="color:var(--tx3);font-size:12px">${escTools(d)}</td>`+
+      `<td style="white-space:nowrap"><button class="au-btn" onclick="wlEdit('${escTools(k)}')" style="padding:4px 10px;margin-right:.35rem">Edit</button>`+
+      `<button class="au-btn del" onclick="wlDelete('${escTools(k)}')" style="padding:4px 10px">Delete</button></td></tr>`;
+  }).join('') : '<tr><td colspan="5" style="color:var(--tx3);padding:1rem">No applicants yet — add one below, or wait for public signups.</td></tr>';
+}
+// Attach a live Firebase listener once; the table re-paints on every change (real-time sync).
+function wlSubscribe(){
+  if(_wlSubscribed) return;
+  _wlSubscribed=true;
+  try{
+    wlRef().on('value',
+      s=>{ _wlError=null; _wlCache=s.val()||{}; wlPaint(); },
+      err=>{ _wlError=err.message; _wlSubscribed=false; wlPaint(); }
+    );
+  }catch(e){ _wlError=e.message; _wlSubscribed=false; wlPaint(); }
+}
+function renderWaitlist(){
+  const host=document.getElementById('wlTbody');
+  if(host && !_wlSubscribed) host.innerHTML='<tr><td colspan="5" style="color:var(--tx3);padding:1rem">Loading…</td></tr>';
+  wlSubscribe();
+  wlPaint();
+}
+function wlAdd(){
+  const em=document.getElementById('wlNewEmail'),nm=document.getElementById('wlNewName'),mb=document.getElementById('wlNewMember');
+  const email=(em.value||'').trim();
+  if(!wlValid(email)){showToast('Enter a valid email');em.focus();return;}
+  wlRef().push({email,name:(nm.value||'').trim(),member:!!mb.checked,at:Date.now(),addedBy:currentUser||'admin'})
+    .then(()=>{em.value='';nm.value='';mb.checked=false;showToast('Added ✓');logEv(currentUser||'admin','waitlist','Added '+email);renderWaitlist();})
+    .catch(e=>showToast('Add failed: '+e.message));
+}
+function wlDelete(k){
+  const e=_wlCache[k]||{};
+  if(!confirm('Remove '+(e.email||'this applicant')+' from the waitlist?'))return;
+  wlRef().child(k).remove()
+    .then(()=>{showToast('Removed ✓');logEv(currentUser||'admin','waitlist','Removed '+(e.email||k));renderWaitlist();})
+    .catch(e=>showToast('Delete failed: '+e.message));
+}
+function wlEdit(k){
+  const e=_wlCache[k]||{};
+  const email=prompt('Email:',e.email||''); if(email===null)return;
+  if(!wlValid(email)){showToast('Invalid email');return;}
+  const name=prompt('Name (optional):',e.name||''); if(name===null)return;
+  const member=confirm('Is this person a member?\n\nOK = Member   ·   Cancel = Guest');
+  wlRef().child(k).update({email:email.trim(),name:name.trim(),member:member})
+    .then(()=>{showToast('Updated ✓');logEv(currentUser||'admin','waitlist','Edited '+email.trim());renderWaitlist();})
+    .catch(e=>showToast('Update failed: '+e.message));
+}
+window.renderWaitlist=renderWaitlist;window.wlAdd=wlAdd;window.wlEdit=wlEdit;window.wlDelete=wlDelete;
 
 // ═══════════════════════════════════════════════════
 //  HELPERS

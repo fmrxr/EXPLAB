@@ -11,6 +11,9 @@ html, body { width:100%; height:100%; background:#060610; overflow:hidden; font-
 #ui { position:fixed; inset:0; z-index:10; pointer-events:none; }
 
 #header { position:absolute; top:0; left:0; right:0; padding:20px 28px; display:flex; align-items:center; justify-content:space-between; pointer-events:auto; }
+#brand { display:flex; align-items:center; gap:18px; }
+#home-link { font-family:'Space Mono',monospace; font-size:10px; letter-spacing:.15em; text-transform:uppercase; color:#5a5870; text-decoration:none; padding:5px 12px; border:1px solid rgba(232,230,240,.1); border-radius:1px; transition:all .2s; }
+#home-link:hover { color:#e8e6f0; border-color:#e94560; }
 #wordmark { font-family:'Space Mono',monospace; font-size:12px; letter-spacing:.18em; color:#e8e6f0; opacity:.75; }
 #wordmark span { color:#e94560; }
 #tagline { font-size:10px; letter-spacing:.15em; color:#5a5870; text-transform:uppercase; font-family:'Space Mono',monospace; }
@@ -176,7 +179,10 @@ html, body { width:100%; height:100%; background:#060610; overflow:hidden; font-
 <div id="three"></div>
 <div id="ui">
   <div id="header">
-    <div id="wordmark">EXPLAB <span>ⵣ</span></div>
+    <div id="brand">
+      <a id="home-link" href="index.html">← Home</a>
+      <div id="wordmark">EXPLAB <span>ⵣ</span></div>
+    </div>
     <div id="tagline">3D Mind Map</div>
   </div>
   <div id="filters">
