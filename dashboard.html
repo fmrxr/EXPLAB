@@ -569,7 +569,8 @@ html,body{min-height:100vh;background:var(--blk);color:var(--tx);font-family:'Sp
     <div class="sb-item" onclick="sv('tools',this)"><div class="sb-dot" style="background:var(--blu)"></div><span>Tools Analysis</span></div>
     <div class="sb-sec">System</div>
     <div class="sb-item" onclick="sv('log',this)"><div class="sb-dot"></div><span>Activity Log</span></div>
-    <div class="sb-item" id="waitlistNav" style="display:none" onclick="sv('waitlist',this)"><div class="sb-dot" style="background:var(--grn)"></div><span>Waitlist</span></div>
+    <div class="sb-item" id="eventsNav" style="display:none" onclick="sv('events',this)"><div class="sb-dot" style="background:var(--or)"></div><span>Events</span></div>
+    <div class="sb-item" id="waitlistNav" style="display:none" onclick="sv('waitlist',this)"><div class="sb-dot" style="background:var(--grn)"></div><span>Waitlist <span id="wlBadge" style="display:none;font-size:9px;background:var(--grn);color:#000;border-radius:8px;padding:0 6px;margin-left:4px;font-weight:700">0</span></span></div>
     <div class="sb-item" id="adminNav" style="display:none" onclick="sv('admin',this)"><div class="sb-dot" style="background:var(--red)"></div><span>Admin <span style="font-size:9px;background:var(--red);color:#fff;padding:1px 5px;margin-left:3px">FMR</span></span></div>
   </nav>
   <div class="sb-bot">
@@ -720,7 +721,7 @@ html,body{min-height:100vh;background:var(--blk);color:var(--tx);font-family:'Sp
   <!-- ══ WAITLIST ══ -->
   <div class="view" id="view-waitlist">
     <div class="ph">
-      <div><div class="ph-title">Waitlist — Workshop #001 <span class="ph-badge admin">FMR</span></div><div class="ph-sub" id="wlCount">—</div></div>
+      <div><div class="ph-title">Waitlist — <span id="wlEventLabel">Workshop #001</span> <span class="ph-badge admin">FMR</span></div><div class="ph-sub" id="wlCount">—</div></div>
       <div><button class="bti" onclick="renderWaitlist()" style="font-size:11px">↻ Refresh</button></div>
     </div>
     <div class="admin-section">
@@ -740,6 +741,40 @@ html,body{min-height:100vh;background:var(--blk);color:var(--tx);font-family:'Sp
       </table>
       <div style="font-size:11px;color:var(--tx3);margin-top:.5rem">Public signups land here once the <span style="color:var(--or);font-family:'Courier Prime',monospace">waitlist</span> database rules are deployed. You can always add, edit, or remove participants manually.</div>
     </div>
+  </div>
+
+  <!-- ══ EVENTS ══ -->
+  <div class="view" id="view-events">
+    <div class="ph">
+      <div><div class="ph-title">Events <span class="ph-badge admin">FMR</span></div><div class="ph-sub">The <b>active</b> event sets the site theme (orange Gathering / green Workshop) and the homepage "Next event".</div></div>
+      <div style="display:flex;gap:.5rem"><button class="au-btn" onclick="evSeed()">Initialize defaults</button><button class="au-btn" onclick="evOpenForm(null)" style="background:var(--or);color:#000;border-color:var(--or)">+ New event</button></div>
+    </div>
+
+    <!-- Inline create/edit form -->
+    <div class="admin-section" id="evForm" style="display:none">
+      <div class="admin-st" id="evFormTitle">New event</div>
+      <input type="hidden" id="evId">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.6rem;margin-bottom:.6rem">
+        <label style="font-size:11px;color:var(--tx3)">Type<select class="adm-input" id="evType" style="width:100%;margin-top:3px"><option value="workshop">Workshop (green)</option><option value="gathering">Gathering (orange)</option></select></label>
+        <label style="font-size:11px;color:var(--tx3)">Number<input class="adm-input" id="evNumber" placeholder="001" style="width:100%;margin-top:3px"></label>
+        <label style="font-size:11px;color:var(--tx3)">Date<input class="adm-input" id="evDate" type="date" style="width:100%;margin-top:3px"></label>
+        <label style="font-size:11px;color:var(--tx3)">Time range<input class="adm-input" id="evTime" placeholder="17H00–20H00" style="width:100%;margin-top:3px"></label>
+        <label style="font-size:11px;color:var(--tx3)">Location<input class="adm-input" id="evLocation" placeholder="MOUHIT SPACE, TUNIS" style="width:100%;margin-top:3px"></label>
+        <label style="font-size:11px;color:var(--tx3)">Capacity<input class="adm-input" id="evCapacity" type="number" placeholder="10" style="width:100%;margin-top:3px"></label>
+        <label style="font-size:11px;color:var(--tx3)">Status<select class="adm-input" id="evStatus" style="width:100%;margin-top:3px"><option value="upcoming">Upcoming</option><option value="active">Active</option><option value="past">Past (archive)</option></select></label>
+      </div>
+      <label style="font-size:11px;color:var(--tx3)">Description<textarea class="adm-input" id="evDesc" rows="2" style="width:100%;margin-top:3px;resize:vertical"></textarea></label>
+      <label style="display:flex;align-items:center;gap:.4rem;font-size:12px;color:var(--tx2);margin:.7rem 0"><input type="checkbox" id="evRegistration" checked> Registration open (show waitlist signup on homepage)</label>
+      <div class="admin-st" style="margin-top:.5rem">Program</div>
+      <div id="evProgramRows"></div>
+      <button class="au-btn" onclick="evAddRow()" style="margin-top:.4rem;padding:5px 12px">+ Add program row</button>
+      <div style="display:flex;gap:.5rem;margin-top:1rem">
+        <button class="au-btn" onclick="evSave()" style="background:var(--or);color:#000;border-color:var(--or)">Save event</button>
+        <button class="au-btn" onclick="evCloseForm()">Cancel</button>
+      </div>
+    </div>
+
+    <div id="evList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem"></div>
   </div>
 
   <!-- ══ TOOLS FOR THE COMMUNITY — DATA ANALYSIS ══ -->
@@ -984,6 +1019,8 @@ function finishLogin(name,guest=false){
   document.getElementById('ubn').textContent=name;
   document.getElementById('adminNav').style.display=isAdmin?'flex':'none';
   { const wn=document.getElementById('waitlistNav'); if(wn) wn.style.display=isAdmin?'flex':'none'; }
+  { const en=document.getElementById('eventsNav'); if(en) en.style.display=isAdmin?'flex':'none'; }
+  if(isAdmin && typeof wlWatchBadge==='function') wlWatchBadge();
   const sbBot=document.querySelector('.sb-bot');
   if(sbBot)sbBot.style.display=isOwner?'':'none';
   logEv(name,'login','Authenticated');
@@ -1162,7 +1199,7 @@ function setupDrop(){
 function sv(name,btn){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.querySelectorAll('.sb-item').forEach(b=>b.classList.remove('active'));
-  if(members.length===0&&name!=='log'&&name!=='admin'&&name!=='roadmap'&&name!=='tools'&&name!=='overview'&&name!=='directory'&&name!=='waitlist'){
+  if(members.length===0&&name!=='log'&&name!=='admin'&&name!=='roadmap'&&name!=='tools'&&name!=='overview'&&name!=='directory'&&name!=='waitlist'&&name!=='events'){
     document.getElementById('view-empty').classList.add('active');
     return;
   }
@@ -1170,7 +1207,7 @@ function sv(name,btn){
   if(el)el.classList.add('active');
   if(btn)btn.classList.add('active');
   const fn={overview:renderOverview,skills:renderSkills,hardware:renderHardware,
-             gaps:renderGaps,matches:renderMatches,directory:renderDirectory,log:renderLog,admin:renderAdmin,roadmap:renderRoadmap,tools:renderTools,waitlist:renderWaitlist};
+             gaps:renderGaps,matches:renderMatches,directory:renderDirectory,log:renderLog,admin:renderAdmin,roadmap:renderRoadmap,tools:renderTools,waitlist:renderWaitlist,events:renderEvents};
   fn[name]?.();
   if(currentUser&&name!=='empty')logEv(currentUser,'view','→ '+name);
 }
@@ -1178,7 +1215,7 @@ function sv(name,btn){
 // ═══════════════════════════════════════════════════
 //  WAITLIST  (Workshop #001)
 // ═══════════════════════════════════════════════════
-const WL_EVENT='workshop-001';
+let WL_EVENT='workshop-001';
 let _wlCache={}, _wlSubscribed=false, _wlError=null;
 function wlRef(){return (db||firebase.database()).ref('waitlist/'+WL_EVENT);}
 const wlValid=e=>/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(e||'').trim());
@@ -1242,6 +1279,157 @@ function wlEdit(k){
     .catch(e=>showToast('Update failed: '+e.message));
 }
 window.renderWaitlist=renderWaitlist;window.wlAdd=wlAdd;window.wlEdit=wlEdit;window.wlDelete=wlDelete;
+
+// Sidebar live count badge for the active event's waitlist
+let _wlBadgeRef=null;
+function wlBadgeBind(){
+  const d=db||firebase.database();
+  if(_wlBadgeRef){ try{_wlBadgeRef.off();}catch(_){} }
+  _wlBadgeRef=d.ref('waitlist/'+WL_EVENT);
+  _wlBadgeRef.on('value',s=>{
+    const n=s.val()?Object.keys(s.val()).length:0;
+    const b=document.getElementById('wlBadge');
+    if(b){ b.textContent=n; b.style.display=n?'inline-block':'none'; }
+  },()=>{});
+}
+function wlWatchBadge(){
+  const d=db||firebase.database();
+  // Track the active event so the waitlist view + badge follow it
+  d.ref('siteConfig/activeEventId').on('value',s=>{
+    const id=s.val(); if(!id||id===WL_EVENT){ wlBadgeBind(); return; }
+    WL_EVENT=id; _wlSubscribed=false; _wlCache={};
+    d.ref('events/'+id).once('value').then(es=>{
+      const ev=es.val()||{}; const lbl=(ev.type==='gathering'?'Gathering':'Workshop')+' #'+(ev.number||'');
+      const h=document.getElementById('wlEventLabel'); if(h) h.textContent=lbl;
+    }).catch(()=>{});
+    if(document.getElementById('view-waitlist').classList.contains('active')) renderWaitlist();
+    wlBadgeBind();
+  },()=>{});
+}
+window.wlWatchBadge=wlWatchBadge;
+
+// ═══════════════════════════════════════════════════
+//  EVENTS CMS  (admin)
+// ═══════════════════════════════════════════════════
+let _evCache={}, _evActiveId=null, _evSubscribed=false;
+function evRef(){return (db||firebase.database()).ref('events');}
+function evCfgRef(){return (db||firebase.database()).ref('siteConfig/activeEventId');}
+function evCap(s){return String(s||'').charAt(0).toUpperCase()+String(s||'').slice(1);}
+function evPaint(){
+  const host=document.getElementById('evList'); if(!host)return;
+  const v=_evCache||{};
+  const keys=Object.keys(v).sort((a,b)=>((v[b]||{}).createdAt||0)-((v[a]||{}).createdAt||0));
+  host.innerHTML = keys.length ? keys.map(k=>{
+    const e=v[k]||{}; const isA=k===_evActiveId;
+    const accent=e.type==='gathering'?'#eb6503':'#3feb03';
+    return `<div class="admin-section" style="border-left:3px solid ${accent};margin:0">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem">
+        <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:${accent};font-family:'Courier Prime',monospace">${escTools(e.type||'')}${isA?' · ACTIVE':''}</div>
+        <div style="font-size:10px;color:var(--tx3)">${escTools(e.status||'')}</div>
+      </div>
+      <div style="font-size:18px;font-weight:700;color:var(--tx);margin:.3rem 0">${escTools(evCap(e.type))} #${escTools(e.number||'')}</div>
+      <div style="font-size:12px;color:var(--tx3);margin-bottom:.6rem">${escTools(e.date||'')}${e.location?' · '+escTools(e.location):''}</div>
+      <div style="display:flex;gap:.35rem;flex-wrap:wrap">
+        ${isA?'<span class="au-btn" style="opacity:.5;cursor:default">Active ✓</span>':`<button class="au-btn" onclick="evSetActive('${escTools(k)}')" style="background:${accent};color:#000;border-color:${accent}">Set active</button>`}
+        <button class="au-btn" onclick="evOpenForm('${escTools(k)}')">Edit</button>
+        <button class="au-btn del" onclick="evDelete('${escTools(k)}')">Delete</button>
+      </div>
+    </div>`;
+  }).join('') : '<div style="color:var(--tx3);grid-column:1/-1;padding:1rem">No events yet. Click "Initialize defaults" to seed Gathering #001 + Workshop #001, or "+ New event".</div>';
+}
+function evSubscribe(){
+  if(_evSubscribed) return; _evSubscribed=true;
+  evRef().on('value',s=>{_evCache=s.val()||{};evPaint();},()=>{_evSubscribed=false;});
+  evCfgRef().on('value',s=>{_evActiveId=s.val();evPaint();},()=>{});
+}
+function renderEvents(){ evSubscribe(); evPaint(); }
+function evRowHtml(time,label){
+  return `<div class="ev-row" style="display:flex;gap:.4rem;margin-bottom:.35rem">
+    <input class="adm-input ev-time" placeholder="17H00–17H30" value="${escTools(time||'')}" style="width:140px">
+    <input class="adm-input ev-label" placeholder="What happens…" value="${escTools(label||'')}" style="flex:1">
+    <button class="au-btn del" onclick="this.parentNode.remove()" style="padding:4px 10px">×</button></div>`;
+}
+function evAddRow(time,label){ document.getElementById('evProgramRows').insertAdjacentHTML('beforeend',evRowHtml(time,label)); }
+function evOpenForm(id){
+  const e=id?(_evCache[id]||{}):{};
+  document.getElementById('evFormTitle').textContent=id?('Edit '+evCap(e.type)+' #'+(e.number||'')):'New event';
+  document.getElementById('evId').value=id||'';
+  document.getElementById('evType').value=e.type||'workshop';
+  document.getElementById('evNumber').value=e.number||'';
+  document.getElementById('evDate').value=e.date||'';
+  document.getElementById('evTime').value=e.timeRange||'';
+  document.getElementById('evLocation').value=e.location||'';
+  document.getElementById('evCapacity').value=e.capacity||'';
+  document.getElementById('evStatus').value=e.status||'upcoming';
+  document.getElementById('evDesc').value=e.description||'';
+  document.getElementById('evRegistration').checked=e.registration!==false;
+  const rows=document.getElementById('evProgramRows'); rows.innerHTML='';
+  (Array.isArray(e.program)?e.program:[]).forEach(p=>evAddRow(p.time,p.label));
+  if(!rows.children.length) evAddRow('','');
+  document.getElementById('evForm').style.display='';
+  document.getElementById('evForm').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function evCloseForm(){ document.getElementById('evForm').style.display='none'; }
+function evSave(){
+  const id=document.getElementById('evId').value;
+  const program=[...document.querySelectorAll('#evProgramRows .ev-row')].map(r=>({
+    time:r.querySelector('.ev-time').value.trim(), label:r.querySelector('.ev-label').value.trim()
+  })).filter(p=>p.time||p.label);
+  const data={
+    type:document.getElementById('evType').value,
+    number:document.getElementById('evNumber').value.trim(),
+    date:document.getElementById('evDate').value,
+    timeRange:document.getElementById('evTime').value.trim(),
+    location:document.getElementById('evLocation').value.trim(),
+    capacity:Number(document.getElementById('evCapacity').value)||null,
+    status:document.getElementById('evStatus').value,
+    description:document.getElementById('evDesc').value.trim(),
+    registration:document.getElementById('evRegistration').checked,
+    program
+  };
+  if(!data.number){showToast('Number is required');return;}
+  const ref=id?evRef().child(id):evRef().push();
+  if(!id) data.createdAt=Date.now();
+  ref.update(data)
+    .then(()=>{showToast('Saved ✓');logEv(currentUser||'admin','events',(id?'Edited ':'Created ')+data.type+' #'+data.number);evCloseForm();})
+    .catch(e=>showToast('Save failed: '+e.message));
+}
+function evDelete(id){
+  const e=_evCache[id]||{};
+  if(!confirm('Delete '+evCap(e.type)+' #'+(e.number||'')+'?'))return;
+  evRef().child(id).remove()
+    .then(()=>{showToast('Deleted ✓');logEv(currentUser||'admin','events','Deleted '+e.type+' #'+e.number);})
+    .catch(e=>showToast('Delete failed: '+e.message));
+}
+function evSetActive(id){
+  const prev=_evActiveId;
+  const updates={};
+  if(prev && prev!==id && _evCache[prev]) updates['events/'+prev+'/status']='past';
+  updates['events/'+id+'/status']='active';
+  updates['siteConfig/activeEventId']=id;
+  (db||firebase.database()).ref().update(updates)
+    .then(()=>{const e=_evCache[id]||{};showToast('Active: '+evCap(e.type)+' #'+(e.number||'')+' ✓');logEv(currentUser||'admin','events','Set active '+e.type+' #'+e.number);})
+    .catch(e=>showToast('Failed: '+e.message));
+}
+function evSeed(){
+  evRef().once('value').then(s=>{
+    if(s.val() && Object.keys(s.val()).length){ if(!confirm('Events already exist. Seed the two defaults anyway?')) return; }
+    const now=Date.now();
+    const gathering={type:'gathering',number:'001',status:'past',registration:false,createdAt:now-1000,
+      date:'2026-03-27',timeRange:'5PM',location:'MOUHIT SPACE, TUNIS',capacity:null,
+      description:'Our first gathering — 3 hours of introductions, collective manifesto writing, and building the foundation of what EXPLAB becomes.',program:[]};
+    const workshop={type:'workshop',number:'001',status:'active',registration:true,createdAt:now,
+      date:'2026-06-26',timeRange:'17H00–20H00',location:'MOUHIT SPACE, TUNIS',capacity:10,
+      description:'Hands-on intro to TouchDesigner and Mediapipe — building real-time interactive visual systems from scratch. Beginner friendly, no prerequisites.',
+      program:[{time:'17H00–17H30',label:'TouchDesigner onboarding (beginner, no prerequisites)'},{time:'17H30–19H30',label:'Mediapipe: full project + overview (2h)'},{time:'19H30–20H00',label:'Open discussion / new media art brainstorm'}]};
+    const gRef=evRef().push(), wRef=evRef().push();
+    Promise.all([gRef.set(gathering),wRef.set(workshop)])
+      .then(()=>evCfgRef().set(wRef.key))
+      .then(()=>{showToast('Seeded ✓');logEv(currentUser||'admin','events','Seeded defaults');})
+      .catch(e=>showToast('Seed failed: '+e.message));
+  });
+}
+window.renderEvents=renderEvents;window.evOpenForm=evOpenForm;window.evCloseForm=evCloseForm;window.evAddRow=evAddRow;window.evSave=evSave;window.evDelete=evDelete;window.evSetActive=evSetActive;window.evSeed=evSeed;
 
 // ═══════════════════════════════════════════════════
 //  HELPERS

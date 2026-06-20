@@ -969,7 +969,7 @@ function joinWaitlistAfterSignup(event,email){
   // Best-effort Firebase write (member is authenticated right after signup)
   try{ firebase.database().ref('waitlist/'+event).push({email,member:true,via:'member-form',at:Date.now()}); }catch(_){}
   try{ localStorage.removeItem('xl_waitlist'); }catch(_){}
-  setTimeout(()=>{ location.replace('index.html?waitlisted=1#workshop'); }, 3500);
+  setTimeout(()=>{ location.replace('index.html?waitlisted=1#next-event'); }, 3500);
 }
 window.joinWaitlistAfterSignup=joinWaitlistAfterSignup;
 

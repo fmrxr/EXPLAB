@@ -15,6 +15,16 @@
       ".write": "auth != null"
     },
 
+    "events": {
+      ".read": true,
+      ".write": "auth != null && (root.child('accounts').child(auth.uid).child('role').val() === 'owner' || root.child('accounts').child(auth.uid).child('role').val() === 'admin')"
+    },
+
+    "siteConfig": {
+      ".read": true,
+      ".write": "auth != null && (root.child('accounts').child(auth.uid).child('role').val() === 'owner' || root.child('accounts').child(auth.uid).child('role').val() === 'admin')"
+    },
+
     "waitlist": {
       ".read": "auth != null && (root.child('accounts').child(auth.uid).child('role').val() === 'owner' || root.child('accounts').child(auth.uid).child('role').val() === 'admin')",
       "$event": {
