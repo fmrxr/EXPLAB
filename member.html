@@ -65,7 +65,18 @@ a{color:inherit}
 .mt th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--tx3);padding:.5rem .6rem;border-bottom:1px solid var(--bdr)}
 .mt td{padding:.55rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);color:var(--tx2);vertical-align:top}
 .pill{font-size:9px;text-transform:uppercase;letter-spacing:.1em;padding:2px 7px;border-radius:8px;font-weight:700}
-@media(max-width:780px){.sidebar{width:52px}.sb-item span,.sb-sec,.soon-tag{display:none}.sb-item{justify-content:center;padding:.7rem}.main{padding:1.25rem}}
+/* chat */
+.chat{display:flex;flex-direction:column;height:calc(100vh - 215px);min-height:360px;border:1px solid var(--bdr);border-radius:2px;background:var(--s1)}
+.chat-msgs{flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:.55rem}
+.msg{max-width:74%;padding:.5rem .8rem;background:var(--s2);border:1px solid var(--bdr);border-radius:10px;align-self:flex-start}
+.msg.mine{align-self:flex-end;background:rgba(63,235,3,.08);border-color:var(--bdr2)}
+.msg .who{font-size:10px;color:var(--or);font-weight:700;letter-spacing:.03em}
+.msg .tm{font-size:9px;color:var(--tx4);margin-left:.4rem}
+.msg .tx{font-size:13px;color:var(--tx);margin-top:2px;white-space:pre-wrap;word-break:break-word;line-height:1.5}
+.chat-input{display:flex;gap:.5rem;padding:.7rem;border-top:1px solid var(--bdr)}
+.chat-input input{flex:1;padding:.7rem .9rem;background:var(--s2);border:1px solid var(--bdr);color:var(--tx);font-family:inherit;font-size:13px;border-radius:2px}
+.chat-input input:focus{outline:none;border-color:var(--bdr2)}
+@media(max-width:780px){.sidebar{width:52px}.sb-item span,.sb-sec,.soon-tag{display:none}.sb-item{justify-content:center;padding:.7rem}.main{padding:1.25rem}.msg{max-width:88%}}
 </style>
 </head>
 <body>
@@ -99,7 +110,7 @@ a{color:inherit}
       <div class="sb-item" onclick="sv('matches',this)"><div class="sb-dot" style="background:var(--blu)"></div><span>Collaboration Matches</span></div>
 
       <div class="sb-sec">Spaces</div>
-      <div class="sb-item soon"><div class="sb-dot"></div><span>General Chat</span><span class="soon-tag">soon</span></div>
+      <div class="sb-item" onclick="sv('chat',this)"><div class="sb-dot" style="background:var(--grn)"></div><span>General Chat</span></div>
       <div class="sb-item soon"><div class="sb-dot"></div><span>TouchDesigner Lab</span><span class="soon-tag">soon</span></div>
       <div class="sb-item soon"><div class="sb-dot"></div><span>Creative Coding Lab</span><span class="soon-tag">soon</span></div>
       <div class="sb-item soon"><div class="sb-dot"></div><span>Hardware Lab</span><span class="soon-tag">soon</span></div>
@@ -200,6 +211,18 @@ a{color:inherit}
       <div class="prose"><p>An interactive 3D space of the community's themes — curiosity, failure, tools, values. Click any node to leave a thought, mark how it resonates, or hear the room reflected back.</p></div>
       <div style="margin-top:1.25rem"><a class="btn" href="explab-mindmap-3d.html">Open the 3D Mind Map →</a></div>
     </div>
+
+    <!-- GENERAL CHAT -->
+    <div class="view" id="view-chat">
+      <div class="ph"><div class="ph-title">General Chat</div><div class="ph-sub">Community conversation · be kind, share freely</div></div>
+      <div class="chat">
+        <div class="chat-msgs" id="chatMsgs"><div class="empty">Loading…</div></div>
+        <form class="chat-input" id="chatForm">
+          <input id="chatText" placeholder="Message the community…" autocomplete="off" maxlength="500">
+          <button class="btn" type="submit">Send</button>
+        </form>
+      </div>
+    </div>
   </main>
 </div>
 
@@ -222,7 +245,7 @@ function sv(name,btn){
   const el=document.getElementById('view-'+name); if(el)el.classList.add('active');
   if(btn)btn.classList.add('active');
   ({members:renderMembers,myskills:renderMyProfile,myprojects:renderMyProfile,mycontrib:renderMyProfile,
-    skillmap:renderSkillMap,hardwaremap:renderHardwareMap,matches:renderMatches,meetups:renderMeetups}[name]||function(){})();
+    skillmap:renderSkillMap,hardwaremap:renderHardwareMap,matches:renderMatches,meetups:renderMeetups,chat:renderChat}[name]||function(){})();
 }
 window.sv=sv;
 
@@ -348,6 +371,33 @@ function renderMatches(){
       shared.slice(0,6).map(s=>'<span class="tag on">'+esc(s)+'</span>').join('')+'</div>';
   }).join('')+'</div>' : '<div class="empty">No matches yet — as more members map their skills, recommendations will appear here.</div>';
 }
+
+// ── GENERAL CHAT (Firebase-backed)
+let _chatSub=false;
+function chatRef(){return (DB||firebase.database()).ref('chat/general');}
+function renderChat(){
+  const host=document.getElementById('chatMsgs'); if(!host)return;
+  if(_chatSub){ host.scrollTop=host.scrollHeight; return; }
+  _chatSub=true;
+  chatRef().limitToLast(200).on('value',s=>{
+    const v=s.val()||{}; const keys=Object.keys(v);
+    host.innerHTML = keys.length ? keys.map(k=>{
+      const m=v[k]||{}; const mine=SESSION&&m.uid===SESSION.uid;
+      const t=m.at?new Date(m.at).toLocaleString([], {hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'}):'';
+      return '<div class="msg'+(mine?' mine':'')+'"><div><span class="who">'+esc(m.name||'Member')+'</span><span class="tm">'+esc(t)+'</span></div><div class="tx">'+esc(m.text||'')+'</div></div>';
+    }).join('') : '<div class="empty">No messages yet — say hi 👋</div>';
+    host.scrollTop=host.scrollHeight;
+  },e=>{ _chatSub=false; host.innerHTML='<div class="empty">Chat unavailable: '+esc(e.message)+'</div>'; });
+}
+document.getElementById('chatForm').addEventListener('submit',function(e){
+  e.preventDefault();
+  const inp=document.getElementById('chatText'); const text=(inp.value||'').trim();
+  if(!text) return;
+  if(!SESSION){ alert('Please sign in to chat.'); return; }
+  inp.value='';
+  chatRef().push({uid:SESSION.uid,name:SESSION.name||'Member',text:text,at:Date.now()})
+    .catch(err=>{ inp.value=text; alert('Could not send: '+err.message); });
+});
 
 // ── BOOT
 function boot(session){

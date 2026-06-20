@@ -35,6 +35,16 @@
       }
     },
 
+    "chat": {
+      ".read": "auth != null",
+      "$room": {
+        "$msg": {
+          ".write": "auth != null",
+          ".validate": "newData.hasChildren(['uid','text','at']) && newData.child('uid').val() === auth.uid && newData.child('text').isString() && newData.child('text').val().length <= 500"
+        }
+      }
+    },
+
     "manifesto": {
       ".read": true,
       ".write": "auth != null"
