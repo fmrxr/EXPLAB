@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EXPLAB — Member Dashboard</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%233feb03'/><text y='82' x='12' font-size='78' fill='black'>ⵣ</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --or:#3feb03;--or2:#6dff3d;--blk:#0b0b0b;--s1:#141414;--s2:#1c1c1c;--s3:#252525;
+  --grn:#3feb03;--blu:#3ab8eb;--red:#f05050;--ylw:#e8d03a;
+  --tx:#f0ede8;--tx2:#c5c1ba;--tx3:#a8a39d;--tx4:#6f6a64;
+  --bdr:rgba(63,235,3,0.16);--bdr2:rgba(63,235,3,0.4);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--blk);color:var(--tx);font-family:'Space Grotesk',sans-serif;font-size:14px}
+a{color:inherit}
+/* topbar */
+.topbar{position:sticky;top:0;z-index:20;height:45px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 1.25rem;background:rgba(11,11,11,.96);border-bottom:1px solid var(--bdr);backdrop-filter:blur(8px)}
+.tb-logo{font-weight:700;letter-spacing:.04em;color:var(--or);font-size:14px;text-decoration:none}
+.tb-logo b{color:var(--tx);font-weight:700}
+.tb-tag{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--blk);background:var(--or);padding:2px 6px;margin-left:.5rem;font-weight:700;border-radius:2px}
+.tb-right{display:flex;align-items:center;gap:1rem;font-size:12px}
+.tb-right .u{color:var(--tx2)}
+.tb-right a{color:var(--tx3);text-decoration:none;letter-spacing:.06em;text-transform:uppercase;font-size:11px;font-weight:600}
+.tb-right a:hover{color:var(--or)}
+/* layout */
+.wrap{display:flex;align-items:flex-start}
+.sidebar{width:215px;flex-shrink:0;background:var(--s1);border-right:1px solid var(--bdr);
+  position:sticky;top:45px;height:calc(100vh - 45px);overflow-y:auto;display:flex;flex-direction:column}
+.sb-nav{padding:.5rem 0;flex:1}
+.sb-sec{font-size:9px;text-transform:uppercase;letter-spacing:.18em;color:var(--tx4);padding:.7rem 1.25rem .25rem}
+.sb-item{display:flex;align-items:center;gap:.6rem;padding:.55rem 1.25rem;font-size:12px;font-weight:600;
+  color:var(--tx2);cursor:pointer;transition:all .12s;border-left:2px solid transparent}
+.sb-item:hover{color:var(--tx);background:rgba(255,255,255,.04)}
+.sb-item.active{color:var(--or);border-left-color:var(--or);background:rgba(63,235,3,.07)}
+.sb-item.soon{opacity:.4;cursor:default}
+.sb-item.soon:hover{background:none;color:var(--tx2)}
+.sb-dot{width:5px;height:5px;background:currentColor;transform:rotate(45deg);flex-shrink:0}
+.soon-tag{margin-left:auto;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--tx4);border:1px solid var(--bdr);border-radius:8px;padding:0 5px}
+/* main */
+.main{flex:1;padding:1.75rem 2rem;min-height:calc(100vh - 45px);max-width:1100px}
+.view{display:none}
+.view.active{display:block}
+.ph{margin-bottom:1.5rem}
+.ph-title{font-size:24px;font-weight:700;letter-spacing:-.02em}
+.ph-sub{font-size:13px;color:var(--tx3);margin-top:3px}
+.sec-hdr{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--tx3);margin:1.5rem 0 .75rem;font-family:'Courier Prime',monospace}
+.card{background:var(--s1);border:1px solid var(--bdr);padding:1.25rem 1.4rem;border-radius:2px}
+.grid{display:grid;gap:1rem}
+.tag{display:inline-block;font-size:11px;color:var(--tx2);background:var(--s2);border:1px solid var(--bdr);
+  padding:3px 9px;border-radius:2px;margin:0 4px 6px 0}
+.tag.on{color:var(--or);border-color:var(--bdr2)}
+.btn{display:inline-flex;align-items:center;gap:.4rem;font-size:11px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;padding:.6rem 1.2rem;background:var(--or);color:#000;text-decoration:none;border-radius:2px;border:none;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--tx);border:1px solid var(--bdr2)}
+.prose{font-size:14px;line-height:1.8;color:var(--tx2);max-width:680px}
+.prose strong{color:var(--tx)}
+.empty{color:var(--tx3);font-size:13px;padding:1.5rem 0}
+.coming{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:50vh;text-align:center;color:var(--tx3)}
+.coming .big{font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--or);font-family:'Courier Prime',monospace;margin-bottom:.5rem}
+.mt{width:100%;border-collapse:collapse;font-size:13px}
+.mt th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--tx3);padding:.5rem .6rem;border-bottom:1px solid var(--bdr)}
+.mt td{padding:.55rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);color:var(--tx2);vertical-align:top}
+.pill{font-size:9px;text-transform:uppercase;letter-spacing:.1em;padding:2px 7px;border-radius:8px;font-weight:700}
+@media(max-width:780px){.sidebar{width:52px}.sb-item span,.sb-sec,.soon-tag{display:none}.sb-item{justify-content:center;padding:.7rem}.main{padding:1.25rem}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a class="tb-logo" href="index.html">EXP<b>LAB</b><span class="tb-tag">Member</span></a>
+  <div class="tb-right">
+    <span class="u" id="userName">…</span>
+    <a href="dashboard.html" id="adminLink" style="display:none;color:var(--or)">Admin →</a>
+    <a href="index.html">← Site</a>
+    <a href="#" id="signOut">Sign out</a>
+  </div>
+</div>
+
+<div class="wrap">
+  <aside class="sidebar">
+    <nav class="sb-nav">
+      <div class="sb-sec">Community</div>
+      <div class="sb-item active" onclick="sv('who',this)"><div class="sb-dot"></div><span>Who We Are</span></div>
+      <div class="sb-item" onclick="sv('manifesto',this)"><div class="sb-dot"></div><span>Manifesto</span></div>
+      <div class="sb-item" onclick="sv('meetups',this)"><div class="sb-dot"></div><span>Meetups &amp; Workshops</span></div>
+      <div class="sb-item" onclick="sv('members',this)"><div class="sb-dot"></div><span>Members</span></div>
+
+      <div class="sb-sec">My Profile</div>
+      <div class="sb-item" onclick="sv('myskills',this)"><div class="sb-dot"></div><span>My Skills</span></div>
+      <div class="sb-item" onclick="sv('myprojects',this)"><div class="sb-dot"></div><span>My Projects</span></div>
+      <div class="sb-item" onclick="sv('mycontrib',this)"><div class="sb-dot"></div><span>My Contributions</span></div>
+
+      <div class="sb-sec">Intelligence</div>
+      <div class="sb-item" onclick="sv('skillmap',this)"><div class="sb-dot" style="background:var(--blu)"></div><span>Skill Map</span></div>
+      <div class="sb-item" onclick="sv('hardwaremap',this)"><div class="sb-dot" style="background:var(--blu)"></div><span>Hardware Map</span></div>
+      <div class="sb-item" onclick="sv('matches',this)"><div class="sb-dot" style="background:var(--blu)"></div><span>Collaboration Matches</span></div>
+
+      <div class="sb-sec">Spaces</div>
+      <div class="sb-item soon"><div class="sb-dot"></div><span>General Chat</span><span class="soon-tag">soon</span></div>
+      <div class="sb-item soon"><div class="sb-dot"></div><span>TouchDesigner Lab</span><span class="soon-tag">soon</span></div>
+      <div class="sb-item soon"><div class="sb-dot"></div><span>Creative Coding Lab</span><span class="soon-tag">soon</span></div>
+      <div class="sb-item soon"><div class="sb-dot"></div><span>Hardware Lab</span><span class="soon-tag">soon</span></div>
+
+      <div class="sb-sec">Experimental Tools</div>
+      <div class="sb-item" onclick="sv('mindmap',this)"><div class="sb-dot" style="background:var(--ylw)"></div><span>3D Mind Map</span></div>
+
+      <div class="sb-sec">Projects</div>
+      <div class="sb-item soon"><div class="sb-dot"></div><span>Open Calls</span><span class="soon-tag">soon</span></div>
+      <div class="sb-item soon"><div class="sb-dot"></div><span>Community Experiments</span><span class="soon-tag">soon</span></div>
+      <div class="sb-item soon"><div class="sb-dot"></div><span>Join a Project</span><span class="soon-tag">soon</span></div>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <!-- WHO WE ARE -->
+    <div class="view active" id="view-who">
+      <div class="ph"><div class="ph-title">Who We Are</div><div class="ph-sub">About EXPLAB · Mission · How to participate</div></div>
+      <div class="prose">
+        <p><strong>EXPLAB</strong> is a community for new media arts and interactive experimentation in Tunis, Tunisia — centered around creative coding and the tools that bridge digital ideas and the physical world.</p>
+        <p style="margin-top:1rem"><strong>Mission.</strong> We meet, build, and experiment together: meetups, workshops, and open labs where individual practice becomes collective knowledge and shared tools become a shared language.</p>
+        <p style="margin-top:1rem"><strong>How to participate.</strong> Come to a gathering or workshop, map your skills and the hardware you have, write the manifesto with us, and start or join an experiment. Everyone contributes something — curiosity counts.</p>
+      </div>
+      <div class="sec-hdr">Get involved</div>
+      <div style="display:flex;gap:.6rem;flex-wrap:wrap">
+        <a class="btn" href="#" onclick="sv('meetups',document.querySelectorAll('.sb-item')[2]);return false">See upcoming events →</a>
+        <a class="btn ghost" href="manifesto.html">Open the manifesto →</a>
+      </div>
+    </div>
+
+    <!-- MANIFESTO -->
+    <div class="view" id="view-manifesto">
+      <div class="ph"><div class="ph-title">Manifesto</div><div class="ph-sub">Living community values · Principles · Shared culture</div></div>
+      <div class="prose">
+        <p>Our manifesto is written <strong>together</strong> and kept alive — it evolves as the community does. It captures what we value, what we refuse, and the culture we want to build.</p>
+      </div>
+      <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1.25rem">
+        <a class="btn" href="manifesto.html">Open the living manifesto →</a>
+        <a class="btn ghost" href="manifesto-workbook.html">Manifesto workbook →</a>
+      </div>
+    </div>
+
+    <!-- MEETUPS -->
+    <div class="view" id="view-meetups">
+      <div class="ph"><div class="ph-title">Meetups &amp; Workshops</div><div class="ph-sub">Upcoming events · Past experiments · Join sessions</div></div>
+      <div class="sec-hdr">Upcoming</div>
+      <div class="grid" id="evUpcoming" style="grid-template-columns:repeat(auto-fill,minmax(280px,1fr))"><div class="empty">Loading…</div></div>
+      <div class="sec-hdr">Past experiments</div>
+      <div class="grid" id="evPast" style="grid-template-columns:repeat(auto-fill,minmax(280px,1fr))"></div>
+    </div>
+
+    <!-- MEMBERS -->
+    <div class="view" id="view-members">
+      <div class="ph"><div class="ph-title">Members</div><div class="ph-sub" id="memSub">Community directory · profiles · skills · interests</div></div>
+      <input id="memQ" placeholder="Search name, tool, discipline…" oninput="renderMembers()" style="width:100%;max-width:360px;padding:.6rem .8rem;background:var(--s2);border:1px solid var(--bdr);color:var(--tx);font-family:inherit;font-size:13px;margin-bottom:1rem;border-radius:2px">
+      <div class="grid" id="memGrid" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr))"><div class="empty">Loading…</div></div>
+    </div>
+
+    <!-- MY SKILLS -->
+    <div class="view" id="view-myskills">
+      <div class="ph"><div class="ph-title">My Skills</div><div class="ph-sub">Tools I know · Things I want to learn</div></div>
+      <div id="mySkillsBody"><div class="empty">Loading your profile…</div></div>
+    </div>
+
+    <!-- MY PROJECTS -->
+    <div class="view" id="view-myprojects">
+      <div class="ph"><div class="ph-title">My Projects</div><div class="ph-sub">Current experiments · Collaborations</div></div>
+      <div id="myProjectsBody"><div class="empty">Loading your profile…</div></div>
+    </div>
+
+    <!-- MY CONTRIBUTIONS -->
+    <div class="view" id="view-mycontrib">
+      <div class="ph"><div class="ph-title">My Contributions</div><div class="ph-sub">Workshops joined · Projects contributed</div></div>
+      <div id="myContribBody"><div class="empty">Loading your profile…</div></div>
+    </div>
+
+    <!-- SKILL MAP -->
+    <div class="view" id="view-skillmap">
+      <div class="ph"><div class="ph-title">Skill Map</div><div class="ph-sub">Explore community skills · find people by expertise</div></div>
+      <div id="skillMapBody"><div class="empty">Loading…</div></div>
+    </div>
+
+    <!-- HARDWARE MAP -->
+    <div class="view" id="view-hardwaremap">
+      <div class="ph"><div class="ph-title">Hardware Map</div><div class="ph-sub">Shared equipment · available resources</div></div>
+      <div id="hwMapBody"><div class="empty">Loading…</div></div>
+    </div>
+
+    <!-- MATCHES -->
+    <div class="view" id="view-matches">
+      <div class="ph"><div class="ph-title">Collaboration Matches</div><div class="ph-sub">Recommended connections · people to collaborate with</div></div>
+      <div id="matchesBody"><div class="empty">Loading…</div></div>
+    </div>
+
+    <!-- 3D MIND MAP -->
+    <div class="view" id="view-mindmap">
+      <div class="ph"><div class="ph-title">3D Mind Map</div><div class="ph-sub">Explore the ecosystem · share ideas, thoughts, feelings</div></div>
+      <div class="prose"><p>An interactive 3D space of the community's themes — curiosity, failure, tools, values. Click any node to leave a thought, mark how it resonates, or hear the room reflected back.</p></div>
+      <div style="margin-top:1.25rem"><a class="btn" href="explab-mindmap-3d.html">Open the 3D Mind Map →</a></div>
+    </div>
+  </main>
+</div>
+
+<!-- Firebase + auth -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="auth.js"></script>
+<script src="auth-guard.js"></script>
+<script>
+let SESSION=null, DB=null, ME=null, MEMBERS={}, EVENTS={};
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const cap=s=>String(s||'').charAt(0).toUpperCase()+String(s||'').slice(1);
+const arr=v=>Array.isArray(v)?v:(v&&typeof v==='object'?Object.keys(v):(v?[v]:[]));
+function fmtDate(d){ if(!d) return ''; const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(d); return m?(m[3]+'/'+m[2]+'/'+m[1]):d; }
+
+function sv(name,btn){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(b=>b.classList.remove('active'));
+  const el=document.getElementById('view-'+name); if(el)el.classList.add('active');
+  if(btn)btn.classList.add('active');
+  ({members:renderMembers,myskills:renderMyProfile,myprojects:renderMyProfile,mycontrib:renderMyProfile,
+    skillmap:renderSkillMap,hardwaremap:renderHardwareMap,matches:renderMatches,meetups:renderMeetups}[name]||function(){})();
+}
+window.sv=sv;
+
+// ── EVENTS / MEETUPS
+function eventCard(e){
+  const accent=e.type==='gathering'?'#eb6503':'#3feb03';
+  const prog=(Array.isArray(e.program)?e.program:[]).slice(0,4).map(p=>'<div style="font-size:12px;color:var(--tx3);padding:.15rem 0">'+(p.time?'<b style="color:var(--tx2)">'+esc(p.time)+'</b> — ':'')+esc(p.label||'')+'</div>').join('');
+  const meta=[fmtDate(e.date),e.timeRange,e.location].filter(Boolean).join(' · ');
+  return '<div class="card" style="border-left:3px solid '+accent+'">'+
+    '<div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:'+accent+';font-family:\'Courier Prime\',monospace">'+esc(e.type||'')+'</div>'+
+    '<div style="font-size:18px;font-weight:700;margin:.25rem 0">'+esc(cap(e.type))+' #'+esc(e.number||'')+'</div>'+
+    '<div style="font-size:12px;color:var(--tx3);margin-bottom:.6rem">'+esc(meta)+'</div>'+
+    (e.description?'<div style="font-size:13px;color:var(--tx2);line-height:1.6;margin-bottom:.6rem">'+esc(e.description)+'</div>':'')+
+    prog+
+    (e.registration!==false && e.status!=='past'?'<div style="margin-top:.8rem"><a class="btn" href="index.html#next-event">Join session →</a></div>':'')+
+    '</div>';
+}
+function renderMeetups(){
+  const up=document.getElementById('evUpcoming'), pa=document.getElementById('evPast');
+  const list=Object.keys(EVENTS).map(k=>EVENTS[k]);
+  const upcoming=list.filter(e=>e.status!=='past').sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+  const past=list.filter(e=>e.status==='past').sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+  up.innerHTML=upcoming.length?upcoming.map(eventCard).join(''):'<div class="empty">No upcoming events yet.</div>';
+  pa.innerHTML=past.length?past.map(eventCard).join(''):'<div class="empty">No past events archived yet.</div>';
+}
+
+// ── MEMBERS DIRECTORY
+function memTools(m){ return Object.keys((m&&m.software)||{}); }
+function renderMembers(){
+  const host=document.getElementById('memGrid'); if(!host)return;
+  const q=(document.getElementById('memQ').value||'').trim().toLowerCase();
+  const keys=Object.keys(MEMBERS);
+  document.getElementById('memSub').textContent=keys.length+' members · profiles · skills · interests';
+  const cards=keys.map(k=>MEMBERS[k]).filter(m=>{
+    if(!q) return true;
+    const hay=[(m.identity&&m.identity.name),(m.identity&&m.identity.handle),...arr(m.discipline&&m.discipline.fields),...memTools(m)].join(' ').toLowerCase();
+    return hay.includes(q);
+  }).map(m=>{
+    const id=m.identity||{}; const disc=arr(m.discipline&&m.discipline.fields).slice(0,3);
+    const tools=memTools(m).slice(0,4);
+    return '<div class="card">'+
+      '<div style="font-size:15px;font-weight:700">'+esc(id.name||'Member')+'</div>'+
+      (id.handle?'<div style="font-size:11px;color:var(--or);font-family:\'Courier Prime\',monospace">@'+esc(id.handle)+'</div>':'')+
+      (id.zone&&arr(id.zone).length?'<div style="font-size:11px;color:var(--tx3);margin-top:2px">'+esc(arr(id.zone).join(', '))+'</div>':'')+
+      '<div style="margin-top:.6rem">'+disc.map(d=>'<span class="tag on">'+esc(d)+'</span>').join('')+'</div>'+
+      (tools.length?'<div style="margin-top:.2rem">'+tools.map(t=>'<span class="tag">'+esc(t)+'</span>').join('')+'</div>':'')+
+      '</div>';
+  });
+  host.innerHTML=cards.length?cards.join(''):'<div class="empty">No members found.</div>';
+}
+
+// ── MY PROFILE
+function renderMyProfile(){
+  const skillsB=document.getElementById('mySkillsBody'),
+        projB=document.getElementById('myProjectsBody'),
+        contB=document.getElementById('myContribBody');
+  if(!ME){
+    const msg='<div class="card"><div class="prose"><p>We couldn\'t find your member profile yet. Complete the member form to build it.</p></div><div style="margin-top:1rem"><a class="btn" href="member-form.html">Complete your profile →</a></div></div>';
+    if(skillsB)skillsB.innerHTML=msg; if(projB)projB.innerHTML=msg; if(contB)contB.innerHTML=msg; return;
+  }
+  const sw=Object.keys(ME.software||{}); const disc=arr(ME.discipline&&ME.discipline.fields);
+  const proj=ME.projects||{}; const collab=ME.collaboration||{};
+  // skills
+  if(skillsB) skillsB.innerHTML=
+    '<div class="sec-hdr">Disciplines</div><div>'+(disc.length?disc.map(d=>'<span class="tag on">'+esc(d)+'</span>').join(''):'<span class="empty">—</span>')+'</div>'+
+    '<div class="sec-hdr">Tools I know</div><div>'+(sw.length?sw.map(t=>{const lv=(ME.software[t]&&ME.software[t].label)||'';return '<span class="tag on">'+esc(t)+(lv?' · '+esc(lv):'')+'</span>';}).join(''):'<span class="empty">—</span>')+'</div>'+
+    '<div class="sec-hdr">Things I want to learn</div><div class="prose">'+(proj.toLearn?esc(proj.toLearn):'<span class="empty">—</span>')+'</div>';
+  // projects
+  if(projB) projB.innerHTML=
+    '<div class="sec-hdr">Current experiment</div><div class="prose">'+(proj.idea?esc(proj.idea):'<span class="empty">Nothing logged yet.</span>')+'</div>'+
+    '<div class="sec-hdr">Themes</div><div>'+(arr(proj.themes).length?arr(proj.themes).map(t=>'<span class="tag">'+esc(t)+'</span>').join(''):'<span class="empty">—</span>')+'</div>'+
+    '<div class="sec-hdr">Looking to collaborate on</div><div class="prose">'+(collab.lookingFor?esc(collab.lookingFor):'<span class="empty">—</span>')+'</div>';
+  // contributions
+  if(contB) contB.innerHTML=
+    '<div class="sec-hdr">What I can bring</div><div class="prose">'+(proj.toTeach?esc(proj.toTeach):'<span class="empty">—</span>')+'</div>'+
+    '<div class="sec-hdr">Roles</div><div>'+(arr(collab.roles).length?arr(collab.roles).map(r=>'<span class="tag">'+esc(r)+'</span>').join(''):'<span class="empty">—</span>')+'</div>'+
+    '<div class="sec-hdr">Workshops joined</div><div class="card"><div class="prose"><p>Attendance tracking is coming soon — once you register for an event it\'ll show here.</p></div><div style="margin-top:.8rem"><a class="btn ghost" href="index.html#next-event">Browse events →</a></div></div>';
+}
+
+// ── SKILL MAP
+function freqOf(getter){
+  const m={};
+  Object.keys(MEMBERS).forEach(k=>{ getter(MEMBERS[k]).forEach(x=>{ if(x){ const key=String(x); (m[key]=m[key]||{n:0,who:[]}); m[key].n++; const nm=(MEMBERS[k].identity||{}).name; if(nm)m[key].who.push(nm); } }); });
+  return Object.entries(m).sort((a,b)=>b[1].n-a[1].n);
+}
+function rankList(entries,empty){
+  if(!entries.length) return '<div class="empty">'+empty+'</div>';
+  return '<table class="mt"><thead><tr><th>Name</th><th style="width:60px">People</th><th>Who</th></tr></thead><tbody>'+
+    entries.map(([name,d])=>'<tr><td style="color:var(--tx);font-weight:600">'+esc(name)+'</td><td><span class="pill" style="background:var(--s3);color:var(--or)">'+d.n+'</span></td><td>'+esc(d.who.slice(0,6).join(', '))+(d.who.length>6?' +'+(d.who.length-6):'')+'</td></tr>').join('')+
+    '</tbody></table>';
+}
+function renderSkillMap(){
+  const tools=freqOf(m=>Object.keys(m.software||{}));
+  const disc=freqOf(m=>arr(m.discipline&&m.discipline.fields));
+  document.getElementById('skillMapBody').innerHTML=
+    '<div class="sec-hdr">Tools across the community</div>'+rankList(tools,'No tools mapped yet.')+
+    '<div class="sec-hdr">Disciplines</div>'+rankList(disc,'No disciplines yet.');
+}
+function renderHardwareMap(){
+  const hw=freqOf(m=>arr(m.hardware&&m.hardware.items));
+  document.getElementById('hwMapBody').innerHTML=
+    '<div class="sec-hdr">Shared equipment · who has what</div>'+rankList(hw,'No hardware mapped yet.');
+}
+
+// ── MATCHES
+function renderMatches(){
+  const host=document.getElementById('matchesBody');
+  if(!ME){ host.innerHTML='<div class="card"><div class="prose"><p>Complete your profile to get collaboration matches.</p></div><div style="margin-top:1rem"><a class="btn" href="member-form.html">Complete your profile →</a></div></div>'; return; }
+  const myTools=new Set(Object.keys(ME.software||{}).map(s=>s.toLowerCase()));
+  const myDisc=new Set(arr(ME.discipline&&ME.discipline.fields).map(s=>s.toLowerCase()));
+  const myName=(ME.identity||{}).name;
+  const scored=Object.keys(MEMBERS).map(k=>MEMBERS[k]).filter(m=>(m.identity||{}).name!==myName).map(m=>{
+    const tools=Object.keys(m.software||{}).map(s=>s.toLowerCase());
+    const disc=arr(m.discipline&&m.discipline.fields).map(s=>s.toLowerCase());
+    const shared=[...new Set([...tools.filter(t=>myTools.has(t)),...disc.filter(d=>myDisc.has(d))])];
+    return {m,shared};
+  }).filter(x=>x.shared.length).sort((a,b)=>b.shared.length-a.shared.length).slice(0,12);
+  host.innerHTML = scored.length ? '<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr))">'+scored.map(({m,shared})=>{
+    const id=m.identity||{};
+    return '<div class="card"><div style="font-size:15px;font-weight:700">'+esc(id.name||'Member')+'</div>'+
+      (id.handle?'<div style="font-size:11px;color:var(--or);font-family:\'Courier Prime\',monospace">@'+esc(id.handle)+'</div>':'')+
+      '<div style="font-size:11px;color:var(--tx3);margin:.5rem 0 .3rem">Shared interests</div>'+
+      shared.slice(0,6).map(s=>'<span class="tag on">'+esc(s)+'</span>').join('')+'</div>';
+  }).join('')+'</div>' : '<div class="empty">No matches yet — as more members map their skills, recommendations will appear here.</div>';
+}
+
+// ── BOOT
+function boot(session){
+  SESSION=session; DB=firebase.database();
+  document.getElementById('userName').textContent=(session&&session.name)||'Member';
+  if(session && (session.role==='owner'||session.role==='admin')){ const al=document.getElementById('adminLink'); if(al) al.style.display=''; }
+  DB.ref('members').on('value',s=>{
+    MEMBERS=s.val()||{};
+    if(session&&session.memberId) ME=MEMBERS[session.memberId]||ME;
+    // refresh whatever view is open
+    const active=document.querySelector('.view.active');
+    if(active){ const id=active.id.replace('view-','');
+      ({members:renderMembers,myskills:renderMyProfile,myprojects:renderMyProfile,mycontrib:renderMyProfile,skillmap:renderSkillMap,hardwaremap:renderHardwareMap,matches:renderMatches}[id]||function(){})();
+    }
+  },e=>console.warn('members read',e.message));
+  DB.ref('events').on('value',s=>{ EVENTS=s.val()||{}; if(document.getElementById('view-meetups').classList.contains('active')) renderMeetups(); },()=>{});
+}
+document.addEventListener('explab:auth',e=>boot(e.detail));
+if(window.__explabSession) boot(window.__explabSession);
+document.getElementById('signOut').addEventListener('click',function(ev){ev.preventDefault();ExplabAuth.signOut().then(()=>location.replace('login.html'));});
+</script>
+</body>
+</html>

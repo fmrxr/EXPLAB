@@ -1034,6 +1034,8 @@ function finishLogin(name,guest=false){
   const session = ExplabAuth.getSession();
   const isAdmin = session && (session.role==='admin' || session.role==='owner');
   const isOwner = session && session.role==='owner';
+  // Non-admin members belong in the member dashboard (separate page).
+  if(!guest && session && !isAdmin){ location.replace('member.html'); return; }
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('topBar').style.display='flex';
   document.getElementById('appBody').style.display='flex';
