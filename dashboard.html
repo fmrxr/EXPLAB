@@ -134,6 +134,9 @@ html,body{min-height:100vh;background:var(--blk);color:var(--tx);font-family:'Sp
   font-weight:600;color:var(--tx2);cursor:pointer;transition:all .12s;border-left:2px solid transparent}
 .sb-item:hover{color:var(--tx);background:rgba(255,255,255,.04)}
 .sb-item.active{color:var(--or);border-left-color:var(--or);background:rgba(235,101,3,.07)}
+.sb-item.soon{opacity:.4;cursor:default}
+.sb-item.soon:hover{background:none;color:var(--tx2)}
+.soon-tag{margin-left:auto;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--tx4);border:1px solid var(--bdr);border-radius:8px;padding:0 5px}
 .sb-dot{width:5px;height:5px;background:currentColor;transform:rotate(45deg);flex-shrink:0}
 .sb-bot{padding:1rem 1.25rem;border-top:1px solid var(--bdr)}
 .bti{width:100%;background:var(--or);color:#000;border:none;
@@ -559,19 +562,37 @@ html,body{min-height:100vh;background:var(--blk);color:var(--tx);font-family:'Sp
     <div class="sb-sec">Analytics</div>
     <div class="sb-item active" onclick="sv('overview',this)"><div class="sb-dot"></div><span>Overview</span></div>
     <div class="sb-item" onclick="sv('skills',this)"><div class="sb-dot"></div><span>Skill Map</span></div>
-    <div class="sb-item" onclick="sv('hardware',this)"><div class="sb-dot"></div><span>Hardware</span></div>
+    <div class="sb-item" onclick="sv('hardware',this)"><div class="sb-dot"></div><span>Hardware Map</span></div>
     <div class="sb-item" onclick="sv('gaps',this)"><div class="sb-dot"></div><span>Gap Analysis</span></div>
     <div class="sb-item" onclick="sv('matches',this)"><div class="sb-dot"></div><span>Matches</span></div>
-    <div class="sb-sec">Community</div>
+
+    <div class="sb-sec">Community Management</div>
     <div class="sb-item" onclick="sv('directory',this)"><div class="sb-dot"></div><span>Directory</span></div>
+    <div class="sb-item" id="waitlistNav" style="display:none" onclick="sv('waitlist',this)"><div class="sb-dot" style="background:var(--grn)"></div><span>Waitlist <span id="wlBadge" style="display:none;font-size:9px;background:var(--grn);color:#000;border-radius:8px;padding:0 6px;margin-left:4px;font-weight:700">0</span></span></div>
+    <div class="sb-item soon"><div class="sb-dot"></div><span>Roles &amp; Permissions</span><span class="soon-tag">soon</span></div>
+    <div class="sb-item soon"><div class="sb-dot"></div><span>Community Health</span><span class="soon-tag">soon</span></div>
+
+    <div class="sb-sec">Events &amp; Activities</div>
+    <div class="sb-item" id="eventsNav" style="display:none" onclick="sv('events',this)"><div class="sb-dot" style="background:var(--or)"></div><span>Events</span></div>
+    <div class="sb-item soon"><div class="sb-dot"></div><span>Attendance</span><span class="soon-tag">soon</span></div>
+    <div class="sb-item soon"><div class="sb-dot"></div><span>Workshop Archive</span><span class="soon-tag">soon</span></div>
+
+    <div class="sb-sec">Ecosystem Tools</div>
+    <div class="sb-item" onclick="sv('tools',this)"><div class="sb-dot" style="background:var(--blu)"></div><span>3D Mind Map</span></div>
+    <div class="sb-item soon"><div class="sb-dot"></div><span>Collaboration Engine</span><span class="soon-tag">soon</span></div>
+
+    <div class="sb-sec">Projects</div>
     <div class="sb-item" onclick="sv('roadmap',this)"><div class="sb-dot" style="background:var(--ylw)"></div><span>Roadmap</span></div>
-    <div class="sb-sec">Tools for the Community</div>
-    <div class="sb-item" onclick="sv('tools',this)"><div class="sb-dot" style="background:var(--blu)"></div><span>Tools Analysis</span></div>
+    <div class="sb-item soon"><div class="sb-dot"></div><span>Community Projects</span><span class="soon-tag">soon</span></div>
+    <div class="sb-item soon"><div class="sb-dot"></div><span>Open Calls</span><span class="soon-tag">soon</span></div>
+    <div class="sb-item soon"><div class="sb-dot"></div><span>Archive</span><span class="soon-tag">soon</span></div>
+
     <div class="sb-sec">System</div>
     <div class="sb-item" onclick="sv('log',this)"><div class="sb-dot"></div><span>Activity Log</span></div>
-    <div class="sb-item" id="eventsNav" style="display:none" onclick="sv('events',this)"><div class="sb-dot" style="background:var(--or)"></div><span>Events</span></div>
-    <div class="sb-item" id="waitlistNav" style="display:none" onclick="sv('waitlist',this)"><div class="sb-dot" style="background:var(--grn)"></div><span>Waitlist <span id="wlBadge" style="display:none;font-size:9px;background:var(--grn);color:#000;border-radius:8px;padding:0 6px;margin-left:4px;font-weight:700">0</span></span></div>
-    <div class="sb-item" id="adminNav" style="display:none" onclick="sv('admin',this)"><div class="sb-dot" style="background:var(--red)"></div><span>Admin <span style="font-size:9px;background:var(--red);color:#fff;padding:1px 5px;margin-left:3px">FMR</span></span></div>
+    <div class="sb-item soon"><div class="sb-dot"></div><span>Content Management</span><span class="soon-tag">soon</span></div>
+    <div class="sb-item soon"><div class="sb-dot"></div><span>Settings</span><span class="soon-tag">soon</span></div>
+
+    <div class="sb-item" id="adminNav" style="display:none;margin-top:.4rem" onclick="sv('admin',this)"><div class="sb-dot" style="background:var(--red)"></div><span>Admin <span style="font-size:9px;background:var(--red);color:#fff;padding:1px 5px;margin-left:3px">FMR</span></span></div>
   </nav>
   <div class="sb-bot">
     <button class="bti" onclick="document.getElementById('fi').click()">+ Import Cards</button>
