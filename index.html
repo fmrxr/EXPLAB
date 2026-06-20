@@ -409,7 +409,7 @@ footer{background:var(--s2);border-top:1px solid var(--bdr);padding:4rem 2.5rem 
         <div class="hs-lbl">Members</div>
       </div>
       <div>
-        <div class="hs-val">2</div>
+        <div class="hs-val" id="statEvents">2</div>
         <div class="hs-lbl">Events</div>
       </div>
       <div>
@@ -428,8 +428,8 @@ footer{background:var(--s2);border-top:1px solid var(--bdr);padding:4rem 2.5rem 
   <div class="hero-right">
     <img class="hero-img" src="img/img-04.jpg" alt="EXPLAB Community Gathering poster" loading="eager">
     <div class="hero-img-tag">
-      <strong>&lt;COMMUNITY GATHERING #001&gt;</strong><br>
-      FRIDAY 27/03 · 5PM · MOUHIT SPACE
+      <strong id="heroBadgeTitle">&lt;COMMUNITY GATHERING #001&gt;</strong><br>
+      <span id="heroBadgeMeta">FRIDAY 27/03 · 5PM · MOUHIT SPACE</span>
     </div>
   </div>
 </section>
@@ -767,6 +767,13 @@ try{
     set('neRegTitle','Sign up for '+label);
     if(ev.capacity) set('neRegSub','Free. Open to all levels. Space limited to ~'+ev.capacity+' participants.');
     const nav=document.getElementById('navEvent'); if(nav){ nav.textContent=cap(type); nav.setAttribute('href','#next-event'); }
+    // hero poster badge
+    set('heroBadgeTitle','<'+cap(type)+' #'+(ev.number||'')+'>');
+    const hbm=document.getElementById('heroBadgeMeta');
+    if(hbm){ let wd=''; if(ev.date){ const dt=new Date(ev.date+'T00:00:00'); if(!isNaN(dt)) wd=dt.toLocaleDateString('en-US',{weekday:'long'}); }
+      const mm=/^(\d{4})-(\d{2})-(\d{2})$/.exec(ev.date||''); const ddmm=mm?(mm[3]+'/'+mm[2]):'';
+      const parts=[[wd,ddmm].filter(Boolean).join(' '),ev.timeRange,ev.location].filter(Boolean);
+      hbm.textContent=parts.join(' · ').toUpperCase(); }
     if(window.__wlSetEvent) window.__wlSetEvent(id,label);
   }
   function applyArchive(events){
@@ -777,7 +784,7 @@ try{
     if(ev.description) set('arDesc',ev.description);
   }
   db.ref('siteConfig/activeEventId').on('value',s=>{ const id=s.val(); if(!id) return; db.ref('events/'+id).once('value').then(es=>applyActive(id,es.val())).catch(()=>{}); });
-  db.ref('events').on('value',s=>applyArchive(s.val()));
+  db.ref('events').on('value',s=>{ const v=s.val()||{}; const se=document.getElementById('statEvents'); if(se) se.textContent=Object.keys(v).length; applyArchive(v); });
 })();
 </script>
 
