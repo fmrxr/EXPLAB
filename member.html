@@ -65,6 +65,19 @@ a{color:inherit}
 .mt th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--tx3);padding:.5rem .6rem;border-bottom:1px solid var(--bdr)}
 .mt td{padding:.55rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);color:var(--tx2);vertical-align:top}
 .pill{font-size:9px;text-transform:uppercase;letter-spacing:.1em;padding:2px 7px;border-radius:8px;font-weight:700}
+/* profile editor */
+.pf-in{width:100%;padding:.6rem .8rem;background:var(--s2);border:1px solid var(--bdr);color:var(--tx);font-family:inherit;font-size:13px;border-radius:2px;box-sizing:border-box}
+.pf-in:focus{outline:none;border-color:var(--bdr2)}
+textarea.pf-in{resize:vertical;line-height:1.5}
+.pf-grid{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+.pf-grid label,.main label{display:block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--tx3);margin-bottom:3px}
+.pf-chips{display:flex;flex-wrap:wrap;gap:.3rem}
+.pf-chips .tag{cursor:pointer;user-select:none}
+.pf-chips .tag:hover{border-color:var(--bdr2)}
+.pf-skill{display:flex;align-items:center;justify-content:space-between;gap:.6rem;padding:.3rem 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.pf-skill span{font-size:13px;color:var(--tx)}
+.pf-skill-lv{background:var(--s2);border:1px solid var(--bdr);color:var(--tx);font-family:inherit;font-size:12px;padding:.25rem .4rem;border-radius:2px;flex-shrink:0}
+@media(max-width:560px){.pf-grid{grid-template-columns:1fr}}
 /* chat */
 .chat{display:flex;flex-direction:column;height:calc(100vh - 215px);min-height:360px;border:1px solid var(--bdr);border-radius:2px;background:var(--s1)}
 .chat-msgs{flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:.55rem}
@@ -233,7 +246,7 @@ a{color:inherit}
 <script src="auth.js"></script>
 <script src="auth-guard.js"></script>
 <script>
-let SESSION=null, DB=null, ME=null, MEMBERS={}, EVENTS={};
+let SESSION=null, DB=null, ME=null, MEMBERS={}, EVENTS={}, MY_ATT={};
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const cap=s=>String(s||'').charAt(0).toUpperCase()+String(s||'').slice(1);
 const arr=v=>Array.isArray(v)?v:(v&&typeof v==='object'?Object.keys(v):(v?[v]:[]));
@@ -250,8 +263,9 @@ function sv(name,btn){
 window.sv=sv;
 
 // ── EVENTS / MEETUPS
-function eventCard(e){
+function eventCard(id,e){
   const accent=e.type==='gathering'?'#eb6503':'#3feb03';
+  const going=!!(MY_ATT&&MY_ATT[id]);
   const prog=(Array.isArray(e.program)?e.program:[]).slice(0,4).map(p=>'<div style="font-size:12px;color:var(--tx3);padding:.15rem 0">'+(p.time?'<b style="color:var(--tx2)">'+esc(p.time)+'</b> — ':'')+esc(p.label||'')+'</div>').join('');
   const meta=[fmtDate(e.date),e.timeRange,e.location].filter(Boolean).join(' · ');
   return '<div class="card" style="border-left:3px solid '+accent+'">'+
@@ -260,16 +274,25 @@ function eventCard(e){
     '<div style="font-size:12px;color:var(--tx3);margin-bottom:.6rem">'+esc(meta)+'</div>'+
     (e.description?'<div style="font-size:13px;color:var(--tx2);line-height:1.6;margin-bottom:.6rem">'+esc(e.description)+'</div>':'')+
     prog+
-    (e.registration!==false && e.status!=='past'?'<div style="margin-top:.8rem"><a class="btn" href="index.html#next-event">Join session →</a></div>':'')+
+    (e.status!=='past'
+      ? '<div style="margin-top:.8rem"><button class="btn'+(going?' ghost':'')+'" onclick="attToggle(\''+id+'\')">'+(going?'✓ Going · leave':'I\'m attending')+'</button></div>'
+      : (going?'<div style="margin-top:.8rem"><span class="pill" style="background:rgba(63,235,3,.12);color:var(--or)">Attended</span></div>':''))+
     '</div>';
 }
+function attToggle(id){
+  if(!SESSION){ alert('Please sign in.'); return; }
+  const ref=(DB||firebase.database()).ref('attendance/'+SESSION.uid+'/'+id);
+  if(MY_ATT&&MY_ATT[id]){ ref.remove().catch(e=>alert('Failed: '+e.message)); }
+  else { const e=EVENTS[id]||{}; ref.set({at:Date.now(),type:e.type||'',number:e.number||''}).catch(er=>alert('Failed: '+er.message)); }
+}
+window.attToggle=attToggle;
 function renderMeetups(){
   const up=document.getElementById('evUpcoming'), pa=document.getElementById('evPast');
-  const list=Object.keys(EVENTS).map(k=>EVENTS[k]);
-  const upcoming=list.filter(e=>e.status!=='past').sort((a,b)=>String(a.date).localeCompare(String(b.date)));
-  const past=list.filter(e=>e.status==='past').sort((a,b)=>String(b.date).localeCompare(String(a.date)));
-  up.innerHTML=upcoming.length?upcoming.map(eventCard).join(''):'<div class="empty">No upcoming events yet.</div>';
-  pa.innerHTML=past.length?past.map(eventCard).join(''):'<div class="empty">No past events archived yet.</div>';
+  const ids=Object.keys(EVENTS);
+  const upcoming=ids.filter(k=>EVENTS[k].status!=='past').sort((a,b)=>String(EVENTS[a].date).localeCompare(String(EVENTS[b].date)));
+  const past=ids.filter(k=>EVENTS[k].status==='past').sort((a,b)=>String(EVENTS[b].date).localeCompare(String(EVENTS[a].date)));
+  up.innerHTML=upcoming.length?upcoming.map(k=>eventCard(k,EVENTS[k])).join(''):'<div class="empty">No upcoming events yet.</div>';
+  pa.innerHTML=past.length?past.map(k=>eventCard(k,EVENTS[k])).join(''):'<div class="empty">No past events archived yet.</div>';
 }
 
 // ── MEMBERS DIRECTORY
@@ -298,31 +321,107 @@ function renderMembers(){
 }
 
 // ── MY PROFILE
-function renderMyProfile(){
-  const skillsB=document.getElementById('mySkillsBody'),
-        projB=document.getElementById('myProjectsBody'),
-        contB=document.getElementById('myContribBody');
-  if(!ME){
-    const msg='<div class="card"><div class="prose"><p>We couldn\'t find your member profile yet. Complete the member form to build it.</p></div><div style="margin-top:1rem"><a class="btn" href="member-form.html">Complete your profile →</a></div></div>';
-    if(skillsB)skillsB.innerHTML=msg; if(projB)projB.innerHTML=msg; if(contB)contB.innerHTML=msg; return;
+// option lists mirrored from the member form
+const OPT={
+  zone:['Centre-ville','La Marsa','Ariana','Ben Arous','Manouba','Banlieue Nord','Banlieue Sud','Outside Tunis'],
+  disc:['Visual Art','Music / Sound','Interaction Design','Graphic Design','Performance / Theatre','Film / Video','Architecture / Space','Engineering / Electronics','Programming / Dev','New Media Art','Research / Theory','Education / Pedagogy','Photography','Illustration','Game Design'],
+  level:['Learning','Intermediate','Experienced','Expert'],
+  hw:['Arduino','Raspberry Pi','ESP32/8266','Teensy','Jetson Nano','Bela','STM32','Kinect / Depth cam','LiDAR','Ultrasonic','IR sensors','CV Camera','EEG / biosensors','Pressure / FSR','Accelerometer / IMU','Flex sensors','Laser / DMX','MIDI controllers','OSC / DMX','LED strips (NeoPixel etc)','Projector mapping','LED matrix','Servo / motors','Stepper motors','3D printer','Laser cutter','Plotter','Audio interface','Synthesizer','Modular synth','Video mixer','DJ equipment','Camera (photo/video)','Scanner / digitizer'],
+  freq:['Every one','Most of them','Occasionally','Lurker for now'],
+  days:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+  time:['Morning','Afternoon','Evening'],
+  commit:{1:'Just curious',2:'Occasional',3:'Contributor',4:'Active member',5:'Core / all-in'},
+  org:['Facilitate workshops','Help with events','Design / comms','Tech setup','Documentation','Not right now'],
+  them:['Generative visuals','Live A/V performance','Interactive installations','Data visualization','Physical computing','Machine learning / AI','Wearables','Sound synthesis','Net art','Game / XR','Bio / ecology','Archival / heritage','Community tools','Experimental music','Robotics / mechatronics','Textiles / craft'],
+  collab:['Actively seeking','Open to it','Solo for now','Just watching'],
+  role:['Technical lead','Concept / direction','Visual / aesthetic','Sound / music','Hardware / fabrication','Research / writing','Project coordination','Documentation','Testing / feedback'],
+  fmt:['Short sprints','Long-term project','Workshop / jam session','Online / async','In-person only','Performance / show','Residency'],
+  levelLabels:['','Aware','Trying','Comfortable','Fluent','Expert'],
+  skills:['TouchDesigner','Processing','openFrameworks','VVVV','Notch','Resolume','MadMapper','Millumin','Hydra','Unity','Unreal','Blender','Ableton Live','Max/MSP','SuperCollider','Pure Data','Reaktor','Logic Pro','Reaper','VCV Rack','TidalCycles','Sonic Pi','After Effects','Premiere','DaVinci Resolve','Photoshop','Illustrator','Figma','Cinema 4D','Houdini','ZBrush','Python','JavaScript','C++','C#','Rust','GLSL / Shaders','p5.js','Three.js','openCV','TensorFlow / PyTorch']
+};
+function pfVal(id){const e=document.getElementById(id);return e?e.value.trim():'';}
+function fText(id,val,ml,ph){return ml?'<textarea id="'+id+'" rows="3" class="pf-in" placeholder="'+esc(ph||'')+'">'+esc(val||'')+'</textarea>':'<input id="'+id+'" class="pf-in" value="'+esc(val||'')+'" placeholder="'+esc(ph||'')+'">';}
+function fSelect(id,val,opts){return '<select id="'+id+'" class="pf-in"><option value="">—</option>'+opts.map(o=>'<option'+(String(o)===String(val)?' selected':'')+'>'+esc(o)+'</option>').join('')+'</select>';}
+function fCommit(id,val){return '<select id="'+id+'" class="pf-in"><option value="">—</option>'+[1,2,3,4,5].map(i=>'<option value="'+i+'"'+(String(i)===String(val)?' selected':'')+'>'+i+' · '+esc(OPT.commit[i])+'</option>').join('')+'</select>';}
+function fChips(cat,selected,opts){const sel=new Set(arr(selected).map(String));return '<div class="pf-chips" data-cat="'+cat+'">'+opts.map(o=>'<span class="tag'+(sel.has(o)?' on':'')+'" onclick="this.classList.toggle(\'on\')">'+esc(o)+'</span>').join('')+'</div>';}
+function collectChips(cat){return [...document.querySelectorAll('.pf-chips[data-cat="'+cat+'"] .tag.on')].map(c=>c.textContent.trim());}
+function fSkills(sw){
+  const cur=sw||{}; const names=[...new Set(OPT.skills.concat(Object.keys(cur)))];
+  return '<div id="pfSkills">'+names.map(n=>{
+    const lv=(cur[n]&&cur[n].level)||0;
+    return '<div class="pf-skill" data-name="'+esc(n)+'"><span>'+esc(n)+'</span><select class="pf-skill-lv">'+[0,1,2,3,4,5].map(i=>'<option value="'+i+'"'+(i===lv?' selected':'')+'>'+(i===0?'—':esc(OPT.levelLabels[i]))+'</option>').join('')+'</select></div>';
+  }).join('')+'</div><div style="margin-top:.5rem;display:flex;gap:.4rem"><input id="pfSkillNew" class="pf-in" placeholder="Add another tool…" style="flex:1"><button class="btn ghost" type="button" onclick="pfAddSkill()">+ Add</button></div>';
+}
+function pfAddSkill(){const inp=document.getElementById('pfSkillNew');const n=(inp.value||'').trim();if(!n)return;document.getElementById('pfSkills').insertAdjacentHTML('beforeend','<div class="pf-skill" data-name="'+esc(n)+'"><span>'+esc(n)+'</span><select class="pf-skill-lv">'+[0,1,2,3,4,5].map(i=>'<option value="'+i+'"'+(i===3?' selected':'')+'>'+(i===0?'—':esc(OPT.levelLabels[i]))+'</option>').join('')+'</select></div>');inp.value='';}
+function collectSkills(){const o={};document.querySelectorAll('#pfSkills .pf-skill').forEach(r=>{const lv=parseInt(r.querySelector('.pf-skill-lv').value||0);if(lv>0)o[r.dataset.name]={level:lv,label:OPT.levelLabels[lv]};});return o;}
+function pfToast(msg){let t=document.getElementById('pfToast');if(!t){t=document.createElement('div');t.id='pfToast';t.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--or);color:#000;font-weight:700;font-size:12px;padding:.6rem 1.2rem;border-radius:3px;z-index:99;letter-spacing:.06em;opacity:0;transition:opacity .2s';document.body.appendChild(t);}t.textContent=msg;t.style.opacity='1';setTimeout(()=>t.style.opacity='0',2200);}
+function pfSave(section){
+  if(!SESSION||!SESSION.memberId){alert('No profile linked yet — complete the member form first.');return;}
+  const ref=DB.ref('members/'+SESSION.memberId); const u={};
+  if(section==='skills'){
+    u['identity/name']=pfVal('pf_name');u['identity/handle']=pfVal('pf_handle');u['identity/bio']=pfVal('pf_bio');u['identity/zone']=collectChips('zone');
+    u['discipline/fields']=collectChips('disc');u['discipline/other']=pfVal('pf_discOther');u['discipline/level']=pfVal('pf_level');
+    u['software']=collectSkills();u['projects/toLearn']=pfVal('pf_toLearn');
+  }else if(section==='projects'){
+    u['projects/idea']=pfVal('pf_idea');u['projects/themes']=collectChips('them');
+    u['availability/frequency']=pfVal('pf_freq');u['availability/days']=collectChips('days');u['availability/times']=collectChips('time');
+    u['availability/commitment']=pfVal('pf_commit');u['availability/commitLabel']=OPT.commit[pfVal('pf_commit')]||'';u['availability/organising']=collectChips('org');
+    u['collaboration/appetite']=pfVal('pf_collab');u['collaboration/roles']=collectChips('role');u['collaboration/lookingFor']=pfVal('pf_lookingFor');u['collaboration/formats']=collectChips('fmt');u['collaboration/freeText']=pfVal('pf_freeText');
+  }else if(section==='contrib'){
+    u['projects/toTeach']=pfVal('pf_toTeach');u['hardware/items']=collectChips('hw');u['hardware/owned']=pfVal('pf_owned');
   }
-  const sw=Object.keys(ME.software||{}); const disc=arr(ME.discipline&&ME.discipline.fields);
-  const proj=ME.projects||{}; const collab=ME.collaboration||{};
-  // skills
+  ref.update(u).then(()=>{pfToast('Saved ✓');}).catch(e=>alert('Save failed: '+e.message));
+}
+function saveBtn(section){return '<div style="margin-top:1.25rem"><button class="btn" onclick="pfSave(\''+section+'\')">Save changes</button></div>';}
+
+function renderMyProfile(){
+  const skillsB=document.getElementById('mySkillsBody'),projB=document.getElementById('myProjectsBody'),contB=document.getElementById('myContribBody');
+  if(!SESSION||!SESSION.memberId||!ME){
+    const msg='<div class="card"><div class="prose"><p>Your account isn\'t linked to a member profile yet. Complete the member form to build it — then you can edit everything here.</p></div><div style="margin-top:1rem"><a class="btn" href="member-form.html">Complete your profile →</a></div></div>';
+    if(skillsB)skillsB.innerHTML=msg;if(projB)projB.innerHTML=msg;if(contB)contB.innerHTML=msg;return;
+  }
+  const id=ME.identity||{},disc=ME.discipline||{},proj=ME.projects||{},collab=ME.collaboration||{},avail=ME.availability||{},hw=ME.hardware||{};
+  // ── MY SKILLS
   if(skillsB) skillsB.innerHTML=
-    '<div class="sec-hdr">Disciplines</div><div>'+(disc.length?disc.map(d=>'<span class="tag on">'+esc(d)+'</span>').join(''):'<span class="empty">—</span>')+'</div>'+
-    '<div class="sec-hdr">Tools I know</div><div>'+(sw.length?sw.map(t=>{const lv=(ME.software[t]&&ME.software[t].label)||'';return '<span class="tag on">'+esc(t)+(lv?' · '+esc(lv):'')+'</span>';}).join(''):'<span class="empty">—</span>')+'</div>'+
-    '<div class="sec-hdr">Things I want to learn</div><div class="prose">'+(proj.toLearn?esc(proj.toLearn):'<span class="empty">—</span>')+'</div>';
-  // projects
+    '<div class="sec-hdr">Profile</div>'+
+    '<div class="pf-grid"><div><label>Name</label>'+fText('pf_name',id.name)+'</div><div><label>Handle</label>'+fText('pf_handle',id.handle,false,'@handle')+'</div></div>'+
+    '<div style="margin-top:.5rem"><label>Email</label><input class="pf-in" value="'+esc(id.email||(SESSION&&SESSION.email)||'')+'" disabled></div>'+
+    '<div style="margin-top:.5rem"><label>Bio</label>'+fText('pf_bio',id.bio,true,'A line about you…')+'</div>'+
+    '<div style="margin-top:.5rem"><label>Zone</label>'+fChips('zone',id.zone,OPT.zone)+'</div>'+
+    '<div class="sec-hdr">Disciplines</div>'+fChips('disc',disc.fields,OPT.disc)+
+    '<div class="pf-grid" style="margin-top:.5rem"><div><label>Other discipline</label>'+fText('pf_discOther',disc.other)+'</div><div><label>Experience level</label>'+fSelect('pf_level',disc.level,OPT.level)+'</div></div>'+
+    '<div class="sec-hdr">Tools I know</div>'+fSkills(ME.software)+
+    '<div class="sec-hdr">Things I want to learn</div>'+fText('pf_toLearn',proj.toLearn,true,'Tools, techniques, topics…')+
+    saveBtn('skills');
+  // ── MY PROJECTS
   if(projB) projB.innerHTML=
-    '<div class="sec-hdr">Current experiment</div><div class="prose">'+(proj.idea?esc(proj.idea):'<span class="empty">Nothing logged yet.</span>')+'</div>'+
-    '<div class="sec-hdr">Themes</div><div>'+(arr(proj.themes).length?arr(proj.themes).map(t=>'<span class="tag">'+esc(t)+'</span>').join(''):'<span class="empty">—</span>')+'</div>'+
-    '<div class="sec-hdr">Looking to collaborate on</div><div class="prose">'+(collab.lookingFor?esc(collab.lookingFor):'<span class="empty">—</span>')+'</div>';
-  // contributions
-  if(contB) contB.innerHTML=
-    '<div class="sec-hdr">What I can bring</div><div class="prose">'+(proj.toTeach?esc(proj.toTeach):'<span class="empty">—</span>')+'</div>'+
-    '<div class="sec-hdr">Roles</div><div>'+(arr(collab.roles).length?arr(collab.roles).map(r=>'<span class="tag">'+esc(r)+'</span>').join(''):'<span class="empty">—</span>')+'</div>'+
-    '<div class="sec-hdr">Workshops joined</div><div class="card"><div class="prose"><p>Attendance tracking is coming soon — once you register for an event it\'ll show here.</p></div><div style="margin-top:.8rem"><a class="btn ghost" href="index.html#next-event">Browse events →</a></div></div>';
+    '<div class="sec-hdr">Current experiment</div>'+fText('pf_idea',proj.idea,true,'What are you building / want to build?')+
+    '<div class="sec-hdr">Themes</div>'+fChips('them',proj.themes,OPT.them)+
+    '<div class="sec-hdr">Availability</div>'+
+    '<div class="pf-grid"><div><label>Frequency</label>'+fSelect('pf_freq',avail.frequency,OPT.freq)+'</div><div><label>Commitment</label>'+fCommit('pf_commit',avail.commitment)+'</div></div>'+
+    '<div style="margin-top:.5rem"><label>Days</label>'+fChips('days',avail.days,OPT.days)+'</div>'+
+    '<div style="margin-top:.5rem"><label>Times</label>'+fChips('time',avail.times,OPT.time)+'</div>'+
+    '<div style="margin-top:.5rem"><label>Happy to help organise</label>'+fChips('org',avail.organising,OPT.org)+'</div>'+
+    '<div class="sec-hdr">Collaboration</div>'+
+    '<div><label>Appetite</label>'+fSelect('pf_collab',collab.appetite,OPT.collab)+'</div>'+
+    '<div style="margin-top:.5rem"><label>Roles I can take</label>'+fChips('role',collab.roles,OPT.role)+'</div>'+
+    '<div style="margin-top:.5rem"><label>Preferred formats</label>'+fChips('fmt',collab.formats,OPT.fmt)+'</div>'+
+    '<div style="margin-top:.5rem"><label>Looking to collaborate on</label>'+fText('pf_lookingFor',collab.lookingFor,true)+'</div>'+
+    '<div style="margin-top:.5rem"><label>Anything else</label>'+fText('pf_freeText',collab.freeText,true)+'</div>'+
+    saveBtn('projects');
+  // ── MY CONTRIBUTIONS
+  if(contB){
+    const att=Object.keys(MY_ATT||{}).map(k=>Object.assign({id:k},MY_ATT[k])).sort((a,b)=>(b.at||0)-(a.at||0));
+    const list = att.length ? att.map(a=>{const ev=EVENTS[a.id]||{};const type=a.type||ev.type||'';const num=a.number||ev.number||'';const date=fmtDate(ev.date)||(a.at?new Date(a.at).toLocaleDateString():'');
+      return '<div class="card" style="margin-bottom:.5rem;display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:700">'+esc(cap(type))+' #'+esc(num)+'</div><div style="font-size:11px;color:var(--tx3)">'+esc(date)+'</div></div><span class="pill" style="background:rgba(63,235,3,.12);color:var(--or)">Going</span></div>';}).join('')
+      : '<div class="empty">You haven\'t joined any events yet — see <a style="color:var(--or)" href="#" onclick="sv(\'meetups\',document.querySelectorAll(\'.sb-item\')[2]);return false">Meetups</a>.</div>';
+    contB.innerHTML=
+      '<div class="sec-hdr">What I can bring / teach</div>'+fText('pf_toTeach',proj.toTeach,true,'Skills you can share, workshops you could run…')+
+      '<div class="sec-hdr">Hardware I own / can share</div>'+fChips('hw',hw.items,OPT.hw)+
+      '<div style="margin-top:.5rem"><label>Other hardware</label>'+fText('pf_owned',hw.owned,true)+'</div>'+
+      saveBtn('contrib')+
+      '<div class="sec-hdr">Workshops joined</div>'+list;
+  }
 }
 
 // ── SKILL MAP
@@ -413,7 +512,10 @@ function boot(session){
       ({members:renderMembers,myskills:renderMyProfile,myprojects:renderMyProfile,mycontrib:renderMyProfile,skillmap:renderSkillMap,hardwaremap:renderHardwareMap,matches:renderMatches}[id]||function(){})();
     }
   },e=>console.warn('members read',e.message));
-  DB.ref('events').on('value',s=>{ EVENTS=s.val()||{}; if(document.getElementById('view-meetups').classList.contains('active')) renderMeetups(); },()=>{});
+  DB.ref('events').on('value',s=>{ EVENTS=s.val()||{}; const a=(document.querySelector('.view.active')||{}).id; if(a==='view-meetups')renderMeetups(); if(a==='view-mycontrib')renderMyProfile(); },()=>{});
+  if(session&&session.uid){
+    DB.ref('attendance/'+session.uid).on('value',s=>{ MY_ATT=s.val()||{}; const a=(document.querySelector('.view.active')||{}).id; if(a==='view-meetups')renderMeetups(); if(a==='view-mycontrib')renderMyProfile(); },()=>{});
+  }
 }
 document.addEventListener('explab:auth',e=>boot(e.detail));
 if(window.__explabSession) boot(window.__explabSession);
