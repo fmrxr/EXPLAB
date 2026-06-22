@@ -1384,12 +1384,16 @@ function sendConfirmEmail(toEmail,toName){
   if(!toEmail||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(toEmail))||!window.emailjs) return Promise.resolve(false);
   return (db||firebase.database()).ref('events/'+WL_EVENT).once('value').then(s=>{
     const ev=s.val()||{};
-    const name=(ev.type==='gathering'?'Gathering':'Workshop')+' #'+(ev.number||'');
+    const evName=(ev.type==='gathering'?'Gathering':'Workshop')+' #'+(ev.number||'');
     const date=[ev.date?new Date(ev.date+'T00:00:00').toLocaleDateString('en-GB',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}):'',ev.timeRange].filter(Boolean).join(' · ');
+    const who=toName||'there';
+    // Send both naming conventions so the template's To Email ({{email}}) and
+    // subject ({{name}}) resolve, alongside the body vars ({{to_name}} etc).
     return emailjs.send(EJS.service,EJS.confirmTpl,{
-      to_email:String(toEmail), to_name:toName||'there',
-      event_name:name, event_date:date, event_location:ev.location||'',
-      message:'Your spot for '+name+' is confirmed. See you there!'
+      to_email:String(toEmail), email:String(toEmail),
+      to_name:who, name:who,
+      event_name:evName, event_date:date, event_location:ev.location||'',
+      message:'Your spot for '+evName+' is confirmed. See you there!'
     });
   }).then(()=>true).catch(e=>{ console.warn('confirm email:',e&&(e.text||e.message)); return false; });
 }
