@@ -83,9 +83,41 @@ textarea.pf-in{resize:vertical;line-height:1.5}
 .chat-msgs{flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:.55rem}
 .msg{max-width:74%;padding:.5rem .8rem;background:var(--s2);border:1px solid var(--bdr);border-radius:10px;align-self:flex-start}
 .msg.mine{align-self:flex-end;background:rgba(63,235,3,.08);border-color:var(--bdr2)}
-.msg .who{font-size:10px;color:var(--or);font-weight:700;letter-spacing:.03em}
+.msg .who{font-size:10px;font-weight:700;letter-spacing:.03em}
 .msg .tm{font-size:9px;color:var(--tx4);margin-left:.4rem}
 .msg .tx{font-size:13px;color:var(--tx);margin-top:2px;white-space:pre-wrap;word-break:break-word;line-height:1.5}
+/* chat upgrade: embeds */
+.cembed{margin-top:.5rem;max-width:100%}
+.cembed-ph{display:flex;align-items:center;gap:.5rem;width:100%;padding:.6rem .8rem;background:var(--s2);border:1px solid var(--bdr);border-radius:6px;color:var(--tx2);font:inherit;font-size:12px;cursor:pointer;text-align:left}
+.cembed-ph:hover{border-color:var(--bdr2)}
+.cembed-ic{font-size:16px}
+.cembed-lb{font-weight:700;color:var(--tx)}
+.cembed-go{margin-left:auto;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--tx3)}
+.cembed-frame{width:100%;border:0;border-radius:6px}
+.cembed-frame.cembed-youtube,.cembed-frame.cembed-tiktok{aspect-ratio:16/9}
+.cembed-frame.cembed-spotify{height:152px}
+.cembed-frame.cembed-soundcloud{height:120px}
+.cembed-img{max-width:100%;border-radius:6px;display:block}
+/* chat upgrade: reactions + picker */
+.msg-foot{display:flex;align-items:center;flex-wrap:wrap;gap:.3rem;margin-top:.4rem}
+.rpill{display:inline-flex;align-items:center;gap:.2rem;padding:1px 7px;font-size:12px;background:var(--s2);border:1px solid var(--bdr);border-radius:10px;color:var(--tx2);cursor:pointer;line-height:1.6}
+.rpill.on{border-color:var(--or);background:rgba(235,101,3,.12)}
+.rpill .rc{font-size:10px;color:var(--tx3)}
+.msg-react{font-size:13px;line-height:1;padding:1px 7px;background:transparent;border:1px solid var(--bdr);border-radius:10px;color:var(--tx3);cursor:pointer}
+.msg-react:hover{border-color:var(--bdr2);color:var(--tx)}
+.emoji-pop{position:fixed;z-index:10000;background:var(--s1);border:1px solid var(--bdr2);border-radius:8px;padding:.5rem;box-shadow:0 8px 30px rgba(0,0,0,.5);max-width:280px}
+.emoji-quick{display:flex;gap:.2rem;align-items:center}
+.emoji-grid{margin-top:.4rem;max-height:220px;overflow-y:auto}
+.emoji-cat{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--tx3);margin:.4rem 0 .2rem}
+.emoji-row{display:flex;flex-wrap:wrap;gap:.1rem}
+.emoji-b{font-size:18px;line-height:1;padding:3px;background:transparent;border:0;border-radius:4px;cursor:pointer}
+.emoji-b:hover{background:var(--s2)}
+.emoji-more{font-size:14px;color:var(--tx3);background:transparent;border:1px solid var(--bdr);border-radius:6px;cursor:pointer;padding:1px 8px;margin-left:auto}
+/* chat upgrade: moderation */
+.msg-tools{margin-left:.4rem;display:inline-flex;gap:.25rem}
+.msg-tool{font-size:11px;line-height:1;padding:0 4px;background:transparent;border:0;color:var(--tx4);cursor:pointer}
+.msg-tool:hover{color:var(--tx)}
+.chat-note{font-size:11px;color:var(--red);padding:.3rem .7rem;min-height:1em}
 .chat-input{display:flex;gap:.5rem;padding:.7rem;border-top:1px solid var(--bdr)}
 .chat-input input{flex:1;padding:.7rem .9rem;background:var(--s2);border:1px solid var(--bdr);color:var(--tx);font-family:inherit;font-size:13px;border-radius:2px}
 .chat-input input:focus{outline:none;border-color:var(--bdr2)}
@@ -257,6 +289,7 @@ textarea.pf-in{resize:vertical;line-height:1.5}
       <div class="ph"><div class="ph-title">General Chat</div><div class="ph-sub">Community conversation · be kind, share freely</div></div>
       <div class="chat">
         <div class="chat-msgs" id="chatMsgs"><div class="empty">Loading…</div></div>
+        <div class="chat-note" id="chatNote"></div>
         <form class="chat-input" id="chatForm">
           <input id="chatText" placeholder="Message the community…" autocomplete="off" maxlength="500">
           <button class="btn" type="submit">Send</button>
@@ -272,8 +305,9 @@ textarea.pf-in{resize:vertical;line-height:1.5}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="auth.js"></script>
 <script src="auth-guard.js"></script>
+<script src="chat.js"></script>
 <script>
-let SESSION=null, DB=null, ME=null, MEMBERS={}, EVENTS={}, MY_ATT={};
+let SESSION=null, DB=null, ME=null, MEMBERS={}, EVENTS={}, MY_ATT={}, ATT_COUNTS={};
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const cap=s=>String(s||'').charAt(0).toUpperCase()+String(s||'').slice(1);
 const arr=v=>Array.isArray(v)?v:(v&&typeof v==='object'?Object.keys(v):(v?[v]:[]));
@@ -299,6 +333,7 @@ function eventCard(id,e){
     '<div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:'+accent+';font-family:\'Courier Prime\',monospace">'+esc(e.type||'')+'</div>'+
     '<div style="font-size:18px;font-weight:700;margin:.25rem 0">'+esc(cap(e.type))+' #'+esc(e.number||'')+'</div>'+
     '<div style="font-size:12px;color:var(--tx3);margin-bottom:.6rem">'+esc(meta)+'</div>'+
+    '<div style="font-size:11px;font-family:\'Courier Prime\',monospace;color:'+accent+';margin-bottom:.6rem;letter-spacing:.04em">◆ ~'+(ATT_COUNTS[id]||0)+' attending'+(e.capacity?(' / '+e.capacity):'')+'</div>'+
     (e.description?'<div style="font-size:13px;color:var(--tx2);line-height:1.6;margin-bottom:.6rem">'+esc(e.description)+'</div>':'')+
     prog+
     (e.status!=='past'
@@ -308,9 +343,11 @@ function eventCard(id,e){
 }
 function attToggle(id){
   if(!SESSION){ alert('Please sign in.'); return; }
-  const ref=(DB||firebase.database()).ref('attendance/'+SESSION.uid+'/'+id);
-  if(MY_ATT&&MY_ATT[id]){ ref.remove().catch(e=>alert('Failed: '+e.message)); }
-  else { const e=EVENTS[id]||{}; ref.set({at:Date.now(),type:e.type||'',number:e.number||''}).catch(er=>alert('Failed: '+er.message)); }
+  const d=DB||firebase.database();
+  const ref=d.ref('attendance/'+SESSION.uid+'/'+id);          // private "my events" list
+  const pub=d.ref('attendees/'+id+'/'+SESSION.uid);           // public counter entry
+  if(MY_ATT&&MY_ATT[id]){ ref.remove().catch(e=>alert('Failed: '+e.message)); pub.remove().catch(()=>{}); }
+  else { const e=EVENTS[id]||{}; ref.set({at:Date.now(),type:e.type||'',number:e.number||''}).catch(er=>alert('Failed: '+er.message)); pub.set({at:Date.now()}).catch(()=>{}); }
 }
 window.attToggle=attToggle;
 function renderMeetups(){
@@ -507,22 +544,35 @@ function renderChat(){
   _chatSub=true;
   chatRef().limitToLast(200).on('value',s=>{
     const v=s.val()||{}; const keys=Object.keys(v);
+    const myUid=SESSION&&SESSION.uid;
+    const isAdmin=!!(SESSION&&(SESSION.role==='admin'||SESSION.role==='owner'));
     host.innerHTML = keys.length ? keys.map(k=>{
       const m=v[k]||{}; const mine=SESSION&&m.uid===SESSION.uid;
       const t=m.at?new Date(m.at).toLocaleString([], {hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'}):'';
-      return '<div class="msg'+(mine?' mine':'')+'"><div><span class="who">'+esc(m.name||'Member')+'</span><span class="tm">'+esc(t)+'</span></div><div class="tx">'+esc(m.text||'')+'</div></div>';
+      let tools='<span class="msg-tools">';
+      if(!mine) tools+='<button type="button" class="msg-tool msg-report" data-id="'+esc(k)+'" title="Report">⚑</button>';
+      if(isAdmin) tools+='<button type="button" class="msg-tool msg-mute" data-uid="'+esc(m.uid)+'" title="Mute user">🔇</button>';
+      if(isAdmin||mine) tools+='<button type="button" class="msg-tool msg-del" data-id="'+esc(k)+'" title="Delete">✕</button>';
+      tools+='</span>';
+      return '<div class="msg'+(mine?' mine':'')+'"><div><span class="who" style="color:'+ChatEnhance.nameColor(m.uid)+'">'+esc(m.name||'Member')+'</span><span class="tm">'+esc(t)+'</span>'+tools+'</div><div class="tx">'+esc(m.text||'')+'</div>'+ChatEnhance.renderEmbeds(m.text||'')+'<div class="msg-foot">'+ChatEnhance.renderReactions(k,m.reactions,myUid)+'<button type="button" class="msg-react" data-id="'+esc(k)+'">＋</button></div></div>';
     }).join('') : '<div class="empty">No messages yet — say hi 👋</div>';
+    ChatEnhance.bindChatHost(host,{uid:myUid,isAdmin:isAdmin});
     host.scrollTop=host.scrollHeight;
   },e=>{ _chatSub=false; host.innerHTML='<div class="empty">Chat unavailable: '+esc(e.message)+'</div>'; });
 }
+let _muted=null;
 document.getElementById('chatForm').addEventListener('submit',function(e){
   e.preventDefault();
   const inp=document.getElementById('chatText'); const text=(inp.value||'').trim();
+  const note=document.getElementById('chatNote'); if(note)note.textContent='';
   if(!text) return;
   if(!SESSION){ alert('Please sign in to chat.'); return; }
+  if(ChatEnhance.isMutedNow(_muted)){ if(note)note.textContent='You are muted '+ChatEnhance.formatUntil(_muted.until)+'.'; return; }
+  const bad=ChatEnhance.checkText(text);
+  if(bad){ if(note)note.textContent='Message blocked — please rephrase.'; return; }
   inp.value='';
   chatRef().push({uid:SESSION.uid,name:SESSION.name||'Member',text:text,at:Date.now()})
-    .catch(err=>{ inp.value=text; alert('Could not send: '+err.message); });
+    .catch(err=>{ inp.value=text; if(note)note.textContent='Could not send: '+err.message; });
 });
 
 // ── BOOT
@@ -530,6 +580,13 @@ function hideBoot(){const b=document.getElementById('bootLoader');if(b)b.classLi
 setTimeout(hideBoot,5000);
 function boot(session){
   SESSION=session; DB=firebase.database();
+  ChatEnhance.loadBannedWords();
+  if(session&&session.uid) ChatEnhance.watchMyMute(session.uid,function(m){
+    _muted=m;
+    const inp=document.getElementById('chatText'); const note=document.getElementById('chatNote');
+    if(ChatEnhance.isMutedNow(m)){ if(inp){inp.disabled=true;inp.placeholder='You are muted '+ChatEnhance.formatUntil(m.until);} }
+    else { if(inp){inp.disabled=false;inp.placeholder='Message the community…';} if(note)note.textContent=''; }
+  });
   hideBoot();
   document.getElementById('userName').textContent=(session&&session.name)||'Member';
   if(session && (session.role==='owner'||session.role==='admin')){ const al=document.getElementById('adminLink'); if(al) al.style.display=''; }
@@ -543,6 +600,7 @@ function boot(session){
     }
   },e=>console.warn('members read',e.message));
   DB.ref('events').on('value',s=>{ EVENTS=s.val()||{}; const a=(document.querySelector('.view.active')||{}).id; if(a==='view-meetups')renderMeetups(); if(a==='view-mycontrib')renderMyProfile(); },()=>{});
+  DB.ref('attendees').on('value',s=>{ const v=s.val()||{}; ATT_COUNTS={}; Object.keys(v).forEach(k=>{ATT_COUNTS[k]=v[k]?Object.keys(v[k]).length:0;}); if((document.querySelector('.view.active')||{}).id==='view-meetups')renderMeetups(); },()=>{});
   if(session&&session.uid){
     DB.ref('attendance/'+session.uid).on('value',s=>{ MY_ATT=s.val()||{}; const a=(document.querySelector('.view.active')||{}).id; if(a==='view-meetups')renderMeetups(); if(a==='view-mycontrib')renderMyProfile(); },()=>{});
   }

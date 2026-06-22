@@ -561,7 +561,8 @@ footer{background:var(--s2);border-top:1px solid var(--bdr);padding:4rem 2.5rem 
       <div style="border:1px solid rgba(0,0,0,.55);padding:2.5rem;background:var(--or)">
         <div style="font-family:'Courier Prime',monospace;font-size:10px;color:rgba(0,0,0,.75);letter-spacing:.18em;text-transform:uppercase;margin-bottom:1.25rem">Register</div>
         <h3 id="neRegTitle" style="font-size:20px;font-weight:700;color:#000;margin:0 0 .75rem;letter-spacing:-.015em">Sign up for Workshop #001</h3>
-        <p id="neRegSub" style="font-size:13px;color:rgba(0,0,0,.78);line-height:1.65;margin:0 0 2rem">Free. Open to all levels. Space limited to ~10 participants.</p>
+        <p id="neRegSub" style="font-size:13px;color:rgba(0,0,0,.78);line-height:1.65;margin:0 0 1rem">Free. Open to all levels. Space limited to ~10 participants.</p>
+        <div id="neCount" style="display:none;align-items:center;gap:.5rem;margin:0 0 1.5rem;font-family:'Courier Prime',monospace;font-size:12px;font-weight:700;color:#000;letter-spacing:.04em"><span style="width:7px;height:7px;background:#000;transform:rotate(45deg);display:inline-block"></span><span id="neCountTxt">~0 attending</span></div>
         <form id="wlForm" novalidate>
           <input id="wlEmail" type="email" required autocomplete="email" placeholder="your@email.com" style="width:100%;padding:.875rem 1rem;background:rgba(0,0,0,.07);border:1px solid rgba(0,0,0,.45);color:#000;font-family:'Space Grotesk',sans-serif;font-size:14px;margin-bottom:.75rem;box-sizing:border-box">
           <button id="wlBtn" type="submit" style="width:100%;padding:.875rem;background:#000;color:var(--or);border:none;font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:opacity .15s">Join the waitlist →</button>
@@ -710,6 +711,12 @@ try{
   function record(email,member){
     // Best-effort Firebase persistence (fire-and-forget; works once waitlist rules are deployed).
     try{ Promise.resolve(firebase.database().ref('waitlist/'+EVENT).push({email,member:!!member,at:Date.now()})).catch(()=>{}); }catch(_){}
+    // Public, PII-free attendee entry → drives the live "~N attending" counter.
+    try{
+      const u=(window.firebase&&firebase.auth&&firebase.auth().currentUser)||null;
+      const ref=u?firebase.database().ref('attendees/'+EVENT+'/'+u.uid):firebase.database().ref('attendees/'+EVENT).push();
+      Promise.resolve(ref.set({at:Date.now()})).catch(()=>{});
+    }catch(_){}
     // EmailJS is the reliable channel. Never let a slow response hang the UI.
     if(!window.emailjs) return Promise.resolve();
     const send=emailjs.send(EJS.service,EJS.template,{
@@ -743,6 +750,7 @@ try{
 (function(){
   if(!window.firebase||!firebase.apps.length) return;
   const db=firebase.database();
+  let _attRef=null;
   const cap=s=>String(s||'').charAt(0).toUpperCase()+String(s||'').slice(1);
   const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const fmtDate=d=>{ if(!d) return ''; const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(d); return m?(m[3]+'/'+m[2]+'/'+m[1]):d; };
@@ -777,6 +785,14 @@ try{
       const parts=[[wd,ddmm].filter(Boolean).join(' '),ev.timeRange,ev.location].filter(Boolean);
       hbm.textContent=parts.join(' · ').toUpperCase(); }
     if(window.__wlSetEvent) window.__wlSetEvent(id,label);
+    // live attendee counter (public attendees/{id} node)
+    if(_attRef){ try{_attRef.off();}catch(_){} }
+    _attRef=db.ref('attendees/'+id);
+    _attRef.on('value',sn=>{
+      const n=sn.val()?Object.keys(sn.val()).length:0;
+      const t=document.getElementById('neCountTxt'); if(t) t.textContent='~'+n+(n===1?' attending':' attending');
+      const c=document.getElementById('neCount'); if(c) c.style.display = (ev.registration===false?'none':'flex');
+    },()=>{});
   }
   function applyArchive(events){
     const past=Object.keys(events||{}).map(k=>events[k]).filter(e=>e&&e.status==='past').sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));

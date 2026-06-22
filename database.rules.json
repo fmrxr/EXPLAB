@@ -43,12 +43,50 @@
       }
     },
 
+    "attendees": {
+      ".read": true,
+      "$event": {
+        "$id": {
+          ".write": "!data.exists() || (auth != null && (auth.uid === $id || root.child('accounts').child(auth.uid).child('role').val() === 'owner' || root.child('accounts').child(auth.uid).child('role').val() === 'admin'))",
+          ".validate": "newData.hasChild('at') && !newData.hasChild('email')"
+        }
+      }
+    },
+
     "chat": {
       ".read": "auth != null",
       "$room": {
         "$msg": {
-          ".write": "auth != null",
-          ".validate": "newData.hasChildren(['uid','text','at']) && newData.child('uid').val() === auth.uid && newData.child('text').isString() && newData.child('text').val().length <= 500"
+          ".write": "auth != null && (data.exists() ? (data.child('uid').val() === auth.uid || root.child('accounts').child(auth.uid).child('role').val() === 'owner' || root.child('accounts').child(auth.uid).child('role').val() === 'admin') : (newData.child('uid').val() === auth.uid && (!root.child('chatMutes').child(auth.uid).child('until').exists() || root.child('chatMutes').child(auth.uid).child('until').val() <= now) && !newData.child('text').val().matches(/fuck|shit|bitch|asshole|cunt/i)))",
+          ".validate": "newData.hasChildren(['uid','text','at']) && newData.child('uid').val() === auth.uid && newData.child('text').isString() && newData.child('text').val().length <= 500",
+          "reactions": {
+            "$emoji": {
+              "$uid": {
+                ".write": "auth != null && $uid === auth.uid",
+                ".validate": "newData.isBoolean()"
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "chatMutes": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('accounts').child(auth.uid).child('role').val() === 'owner' || root.child('accounts').child(auth.uid).child('role').val() === 'admin')",
+        ".write": "auth != null && (root.child('accounts').child(auth.uid).child('role').val() === 'owner' || root.child('accounts').child(auth.uid).child('role').val() === 'admin')",
+        ".validate": "newData.hasChild('until') && newData.child('until').isNumber()"
+      }
+    },
+
+    "chatReports": {
+      ".read": "auth != null && (root.child('accounts').child(auth.uid).child('role').val() === 'owner' || root.child('accounts').child(auth.uid).child('role').val() === 'admin')",
+      "$room": {
+        "$msg": {
+          "$uid": {
+            ".write": "auth != null && $uid === auth.uid",
+            ".validate": "newData.hasChild('at')"
+          }
         }
       }
     },

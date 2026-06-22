@@ -968,6 +968,8 @@ function joinWaitlistAfterSignup(event,email){
   }catch(_){}
   // Best-effort Firebase write (member is authenticated right after signup)
   try{ firebase.database().ref('waitlist/'+event).push({email,member:true,via:'member-form',at:Date.now()}); }catch(_){}
+  // Public, PII-free attendee entry → live "~N attending" counter
+  try{ const u=firebase.auth().currentUser; if(u) firebase.database().ref('attendees/'+event+'/'+u.uid).set({at:Date.now()}); }catch(_){}
   try{ localStorage.removeItem('xl_waitlist'); }catch(_){}
   setTimeout(()=>{ location.replace('index.html?waitlisted=1#next-event'); }, 3500);
 }
