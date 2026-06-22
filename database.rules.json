@@ -47,7 +47,7 @@
       ".read": true,
       "$event": {
         "$id": {
-          ".write": "!data.exists() || (auth != null && (auth.uid === $id || root.child('accounts').child(auth.uid).child('role').val() === 'owner' || root.child('accounts').child(auth.uid).child('role').val() === 'admin'))",
+          ".write": "auth != null && ((auth.uid === $id && (!newData.exists() || newData.child('status').val() !== 'confirmed')) || root.child('accounts').child(auth.uid).child('role').val() === 'owner' || root.child('accounts').child(auth.uid).child('role').val() === 'admin')",
           ".validate": "newData.hasChild('at') && !newData.hasChild('email')"
         }
       }

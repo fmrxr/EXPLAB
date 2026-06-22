@@ -710,13 +710,9 @@ try{
   }
   function record(email,member){
     // Best-effort Firebase persistence (fire-and-forget; works once waitlist rules are deployed).
-    try{ Promise.resolve(firebase.database().ref('waitlist/'+EVENT).push({email,member:!!member,at:Date.now()})).catch(()=>{}); }catch(_){}
-    // Public, PII-free attendee entry → drives the live "~N attending" counter.
-    try{
-      const u=(window.firebase&&firebase.auth&&firebase.auth().currentUser)||null;
-      const ref=u?firebase.database().ref('attendees/'+EVENT+'/'+u.uid):firebase.database().ref('attendees/'+EVENT).push();
-      Promise.resolve(ref.set({at:Date.now()})).catch(()=>{});
-    }catch(_){}
+    // Signups land as pending; an admin confirms them in the dashboard, which is what
+    // bumps the public "~N attending" counter (the counter shows confirmed attendees only).
+    try{ Promise.resolve(firebase.database().ref('waitlist/'+EVENT).push({email,member:!!member,at:Date.now(),confirmed:false})).catch(()=>{}); }catch(_){}
     // EmailJS is the reliable channel. Never let a slow response hang the UI.
     if(!window.emailjs) return Promise.resolve();
     const send=emailjs.send(EJS.service,EJS.template,{
@@ -789,7 +785,8 @@ try{
     if(_attRef){ try{_attRef.off();}catch(_){} }
     _attRef=db.ref('attendees/'+id);
     _attRef.on('value',sn=>{
-      const n=sn.val()?Object.keys(sn.val()).length:0;
+      const av=sn.val()||{};
+      const n=Object.keys(av).filter(k=>((av[k]||{}).status)==='confirmed').length;
       const t=document.getElementById('neCountTxt'); if(t) t.textContent='~'+n+(n===1?' attending':' attending');
       const c=document.getElementById('neCount'); if(c) c.style.display = (ev.registration===false?'none':'flex');
     },()=>{});

@@ -859,7 +859,7 @@ textarea.pf-in{resize:vertical;line-height:1.5}
     <div class="admin-section">
       <div class="admin-st">Applicants</div>
       <table class="data-table">
-        <thead><tr><th>Email</th><th>Name</th><th>Status</th><th>Date</th><th style="width:1%">Actions</th></tr></thead>
+        <thead><tr><th>Email</th><th>Name</th><th>Source</th><th>Status</th><th>Date</th><th style="width:1%">Actions</th></tr></thead>
         <tbody id="wlTbody"></tbody>
       </table>
       <div style="font-size:11px;color:var(--tx3);margin-top:.5rem">Public signups land here once the <span style="color:var(--or);font-family:'Courier Prime',monospace">waitlist</span> database rules are deployed. You can always add, edit, or remove participants manually.</div>
@@ -1375,40 +1375,61 @@ function sv(name,btn){
 //  WAITLIST  (Workshop #001)
 // ═══════════════════════════════════════════════════
 let WL_EVENT='workshop-001';
-let _wlCache={}, _wlSubscribed=false, _wlError=null;
+let _wlCache={}, _attCache={}, _accts={}, _wlSubscribed=false, _wlError=null;
 function wlRef(){return (db||firebase.database()).ref('waitlist/'+WL_EVENT);}
+function attEvRef(){return (db||firebase.database()).ref('attendees/'+WL_EVENT);}
 const wlValid=e=>/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(e||'').trim());
-// Paint the table from the in-memory cache (kept fresh by the live listener).
+const _statusBadge=ok=>ok
+  ?'<span class="pill" style="background:rgba(63,235,3,.12);color:var(--grn);font-size:9px;text-transform:uppercase;letter-spacing:.08em;padding:2px 7px;border-radius:8px;font-weight:700">Confirmed</span>'
+  :'<span class="pill" style="background:rgba(235,101,3,.12);color:var(--or);font-size:9px;text-transform:uppercase;letter-spacing:.08em;padding:2px 7px;border-radius:8px;font-weight:700">Pending</span>';
+// Paint the unified attendee table (site signups + member RSVPs) from in-memory caches.
 function wlPaint(){
   const host=document.getElementById('wlTbody'); if(!host)return;
-  if(_wlError){host.innerHTML=`<tr><td colspan="5" style="color:var(--red);padding:1rem">Could not sync waitlist: ${escTools(_wlError)}</td></tr>`;return;}
-  const v=_wlCache||{};
-  const keys=Object.keys(v).sort((a,b)=>((v[b]||{}).at||0)-((v[a]||{}).at||0));
-  const ct=document.getElementById('wlCount'); if(ct)ct.textContent=keys.length+(keys.length===1?' applicant':' applicants');
-  host.innerHTML = keys.length ? keys.map(k=>{
-    const e=v[k]||{};
-    const d=e.at?new Date(e.at).toLocaleDateString():'—';
-    const status=e.member?'<span style="color:var(--grn)">Member</span>':'<span style="color:var(--tx3)">Guest</span>';
-    return `<tr><td>${escTools(e.email||'—')}</td><td>${escTools(e.name||'—')}</td><td>${status}</td>`+
+  if(_wlError){host.innerHTML=`<tr><td colspan="6" style="color:var(--red);padding:1rem">Could not sync: ${escTools(_wlError)}</td></tr>`;return;}
+  const rows=[];
+  // Site signups (public form / manually added) — live in waitlist, carry email.
+  Object.keys(_wlCache||{}).forEach(k=>{
+    const e=_wlCache[k]||{}; const ok=e.confirmed===true;
+    rows.push({at:e.at||0,email:e.email||'—',name:e.name||'—',source:'Site',ok:ok,
+      actions:(ok?'':`<button class="au-btn" onclick="wlConfirm('${escTools(k)}')" style="padding:4px 10px;margin-right:.35rem">Confirm</button>`)+
+        `<button class="au-btn del" onclick="wlDelete('${escTools(k)}')" style="padding:4px 10px">Remove</button>`});
+  });
+  // Member RSVPs — live in attendees keyed by uid (skip wl_ counter tokens); resolve via accounts.
+  Object.keys(_attCache||{}).forEach(uid=>{
+    if(uid.indexOf('wl_')===0) return;
+    const e=_attCache[uid]||{}; const ok=(e.status==='confirmed'); const a=_accts[uid]||{};
+    rows.push({at:e.at||0,email:a.email||'—',name:a.displayName||'—',source:'Member',ok:ok,
+      actions:(ok?'':`<button class="au-btn" onclick="attConfirm('${escTools(uid)}')" style="padding:4px 10px;margin-right:.35rem">Confirm</button>`)+
+        `<button class="au-btn del" onclick="attDelete('${escTools(uid)}')" style="padding:4px 10px">Remove</button>`});
+  });
+  rows.sort((a,b)=>b.at-a.at);
+  const confirmed=rows.filter(r=>r.ok).length;
+  const ct=document.getElementById('wlCount'); if(ct)ct.textContent=rows.length+(rows.length===1?' applicant':' applicants')+' · '+confirmed+' confirmed';
+  host.innerHTML = rows.length ? rows.map(r=>{
+    const d=r.at?new Date(r.at).toLocaleDateString():'—';
+    const src=r.source==='Member'?'<span style="color:var(--grn)">Member</span>':'<span style="color:var(--tx3)">Site</span>';
+    return `<tr><td>${escTools(r.email)}</td><td>${escTools(r.name)}</td><td>${src}</td><td>${_statusBadge(r.ok)}</td>`+
       `<td style="color:var(--tx3);font-size:12px">${escTools(d)}</td>`+
-      `<td style="white-space:nowrap"><button class="au-btn" onclick="wlEdit('${escTools(k)}')" style="padding:4px 10px;margin-right:.35rem">Edit</button>`+
-      `<button class="au-btn del" onclick="wlDelete('${escTools(k)}')" style="padding:4px 10px">Delete</button></td></tr>`;
-  }).join('') : '<tr><td colspan="5" style="color:var(--tx3);padding:1rem">No applicants yet — add one below, or wait for public signups.</td></tr>';
+      `<td style="white-space:nowrap">${r.actions}</td></tr>`;
+  }).join('') : '<tr><td colspan="6" style="color:var(--tx3);padding:1rem">No applicants yet — add one below, or wait for signups / member RSVPs.</td></tr>';
 }
-// Attach a live Firebase listener once; the table re-paints on every change (real-time sync).
+// Attach live Firebase listeners once; the table re-paints on every change (real-time sync).
 function wlSubscribe(){
   if(_wlSubscribed) return;
   _wlSubscribed=true;
+  const d=db||firebase.database();
   try{
     wlRef().on('value',
       s=>{ _wlError=null; _wlCache=s.val()||{}; wlPaint(); },
       err=>{ _wlError=err.message; _wlSubscribed=false; wlPaint(); }
     );
+    attEvRef().on('value', s=>{ _attCache=s.val()||{}; wlPaint(); }, ()=>{});
+    d.ref('accounts').on('value', s=>{ _accts=s.val()||{}; wlPaint(); }, ()=>{});
   }catch(e){ _wlError=e.message; _wlSubscribed=false; wlPaint(); }
 }
 function renderWaitlist(){
   const host=document.getElementById('wlTbody');
-  if(host && !_wlSubscribed) host.innerHTML='<tr><td colspan="5" style="color:var(--tx3);padding:1rem">Loading…</td></tr>';
+  if(host && !_wlSubscribed) host.innerHTML='<tr><td colspan="6" style="color:var(--tx3);padding:1rem">Loading…</td></tr>';
   wlSubscribe();
   wlPaint();
 }
@@ -1416,28 +1437,42 @@ function wlAdd(){
   const em=document.getElementById('wlNewEmail'),nm=document.getElementById('wlNewName'),mb=document.getElementById('wlNewMember');
   const email=(em.value||'').trim();
   if(!wlValid(email)){showToast('Enter a valid email');em.focus();return;}
-  wlRef().push({email,name:(nm.value||'').trim(),member:!!mb.checked,at:Date.now(),addedBy:currentUser||'admin'})
+  wlRef().push({email,name:(nm.value||'').trim(),member:!!mb.checked,at:Date.now(),confirmed:false,addedBy:currentUser||'admin'})
     .then(()=>{em.value='';nm.value='';mb.checked=false;showToast('Added ✓');logEv(currentUser||'admin','waitlist','Added '+email);renderWaitlist();})
     .catch(e=>showToast('Add failed: '+e.message));
 }
+// Confirm a site signup: mark it confirmed AND create a PII-free counter token so the
+// public "~N attending" counter (which reads attendees) reflects it.
+function wlConfirm(k){
+  const e=_wlCache[k]||{}; const d=db||firebase.database();
+  Promise.all([
+    wlRef().child(k).update({confirmed:true}),
+    attEvRef().child('wl_'+k).set({at:e.at||Date.now(),status:'confirmed'})
+  ]).then(()=>{showToast('Confirmed ✓');logEv(currentUser||'admin','waitlist','Confirmed '+(e.email||k));})
+   .catch(e=>showToast('Confirm failed: '+e.message));
+}
 function wlDelete(k){
   const e=_wlCache[k]||{};
-  if(!confirm('Remove '+(e.email||'this applicant')+' from the waitlist?'))return;
-  wlRef().child(k).remove()
-    .then(()=>{showToast('Removed ✓');logEv(currentUser||'admin','waitlist','Removed '+(e.email||k));renderWaitlist();})
-    .catch(e=>showToast('Delete failed: '+e.message));
+  if(!confirm('Remove '+(e.email||'this applicant')+'?'))return;
+  Promise.all([ wlRef().child(k).remove(), attEvRef().child('wl_'+k).remove() ])
+    .then(()=>{showToast('Removed ✓');logEv(currentUser||'admin','waitlist','Removed '+(e.email||k));})
+    .catch(e=>showToast('Remove failed: '+e.message));
 }
-function wlEdit(k){
-  const e=_wlCache[k]||{};
-  const email=prompt('Email:',e.email||''); if(email===null)return;
-  if(!wlValid(email)){showToast('Invalid email');return;}
-  const name=prompt('Name (optional):',e.name||''); if(name===null)return;
-  const member=confirm('Is this person a member?\n\nOK = Member   ·   Cancel = Guest');
-  wlRef().child(k).update({email:email.trim(),name:name.trim(),member:member})
-    .then(()=>{showToast('Updated ✓');logEv(currentUser||'admin','waitlist','Edited '+email.trim());renderWaitlist();})
-    .catch(e=>showToast('Update failed: '+e.message));
+// Confirm a member RSVP: flip their attendees status to confirmed (now counts publicly).
+function attConfirm(uid){
+  const a=_accts[uid]||{};
+  attEvRef().child(uid).update({status:'confirmed'})
+    .then(()=>{showToast('Confirmed ✓');logEv(currentUser||'admin','attendees','Confirmed '+(a.email||uid));})
+    .catch(e=>showToast('Confirm failed: '+e.message));
 }
-window.renderWaitlist=renderWaitlist;window.wlAdd=wlAdd;window.wlEdit=wlEdit;window.wlDelete=wlDelete;
+function attDelete(uid){
+  const a=_accts[uid]||{};
+  if(!confirm('Remove '+(a.email||a.displayName||'this member')+' from this event?'))return;
+  attEvRef().child(uid).remove()
+    .then(()=>{showToast('Removed ✓');logEv(currentUser||'admin','attendees','Removed '+(a.email||uid));})
+    .catch(e=>showToast('Remove failed: '+e.message));
+}
+window.renderWaitlist=renderWaitlist;window.wlAdd=wlAdd;window.wlConfirm=wlConfirm;window.wlDelete=wlDelete;window.attConfirm=attConfirm;window.attDelete=attDelete;
 
 // Sidebar live count badge for the active event's waitlist
 let _wlBadgeRef=null;

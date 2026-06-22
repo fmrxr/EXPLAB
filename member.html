@@ -307,7 +307,7 @@ textarea.pf-in{resize:vertical;line-height:1.5}
 <script src="auth-guard.js"></script>
 <script src="chat.js"></script>
 <script>
-let SESSION=null, DB=null, ME=null, MEMBERS={}, EVENTS={}, MY_ATT={}, ATT_COUNTS={};
+let SESSION=null, DB=null, ME=null, MEMBERS={}, EVENTS={}, MY_ATT={}, ATT_COUNTS={}, ATT_RAW={};
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const cap=s=>String(s||'').charAt(0).toUpperCase()+String(s||'').slice(1);
 const arr=v=>Array.isArray(v)?v:(v&&typeof v==='object'?Object.keys(v):(v?[v]:[]));
@@ -326,7 +326,9 @@ window.sv=sv;
 // ── EVENTS / MEETUPS
 function eventCard(id,e){
   const accent=e.type==='gathering'?'#eb6503':'#3feb03';
-  const going=!!(MY_ATT&&MY_ATT[id]);
+  const myA=(ATT_RAW[id]||{})[SESSION&&SESSION.uid];
+  const myStatus=myA?(myA.status||'pending'):(MY_ATT&&MY_ATT[id]?'pending':null); // null | 'pending' | 'confirmed'
+  const going=!!myStatus;
   const prog=(Array.isArray(e.program)?e.program:[]).slice(0,4).map(p=>'<div style="font-size:12px;color:var(--tx3);padding:.15rem 0">'+(p.time?'<b style="color:var(--tx2)">'+esc(p.time)+'</b> — ':'')+esc(p.label||'')+'</div>').join('');
   const meta=[fmtDate(e.date),e.timeRange,e.location].filter(Boolean).join(' · ');
   return '<div class="card" style="border-left:3px solid '+accent+'">'+
@@ -337,7 +339,7 @@ function eventCard(id,e){
     (e.description?'<div style="font-size:13px;color:var(--tx2);line-height:1.6;margin-bottom:.6rem">'+esc(e.description)+'</div>':'')+
     prog+
     (e.status!=='past'
-      ? '<div style="margin-top:.8rem"><button class="btn'+(going?' ghost':'')+'" onclick="attToggle(\''+id+'\')">'+(going?'✓ Going · leave':'I\'m attending')+'</button></div>'
+      ? '<div style="margin-top:.8rem"><button class="btn'+(going?' ghost':'')+'" onclick="attToggle(\''+id+'\')">'+(myStatus==='confirmed'?'✓ Going · leave':myStatus==='pending'?'⏳ Requested · cancel':'I\'m attending')+'</button>'+(myStatus==='pending'?'<div style="font-size:11px;color:var(--tx3);margin-top:.4rem">Awaiting admin confirmation</div>':'')+'</div>'
       : (going?'<div style="margin-top:.8rem"><span class="pill" style="background:rgba(63,235,3,.12);color:var(--or)">Attended</span></div>':''))+
     '</div>';
 }
@@ -345,9 +347,10 @@ function attToggle(id){
   if(!SESSION){ alert('Please sign in.'); return; }
   const d=DB||firebase.database();
   const ref=d.ref('attendance/'+SESSION.uid+'/'+id);          // private "my events" list
-  const pub=d.ref('attendees/'+id+'/'+SESSION.uid);           // public counter entry
-  if(MY_ATT&&MY_ATT[id]){ ref.remove().catch(e=>alert('Failed: '+e.message)); pub.remove().catch(()=>{}); }
-  else { const e=EVENTS[id]||{}; ref.set({at:Date.now(),type:e.type||'',number:e.number||''}).catch(er=>alert('Failed: '+er.message)); pub.set({at:Date.now()}).catch(()=>{}); }
+  const pub=d.ref('attendees/'+id+'/'+SESSION.uid);           // public RSVP entry (admin confirms)
+  const has=!!((ATT_RAW[id]||{})[SESSION.uid]) || !!(MY_ATT&&MY_ATT[id]);
+  if(has){ ref.remove().catch(e=>alert('Failed: '+e.message)); pub.remove().catch(()=>{}); }
+  else { const e=EVENTS[id]||{}; ref.set({at:Date.now(),type:e.type||'',number:e.number||'',status:'pending'}).catch(er=>alert('Failed: '+er.message)); pub.set({at:Date.now(),status:'pending'}).catch(er=>alert('Failed: '+er.message)); }
 }
 window.attToggle=attToggle;
 function renderMeetups(){
@@ -604,7 +607,7 @@ function boot(session){
     }
   },e=>console.warn('members read',e.message));
   DB.ref('events').on('value',s=>{ EVENTS=s.val()||{}; const a=(document.querySelector('.view.active')||{}).id; if(a==='view-meetups')renderMeetups(); if(a==='view-mycontrib')renderMyProfile(); },()=>{});
-  DB.ref('attendees').on('value',s=>{ const v=s.val()||{}; ATT_COUNTS={}; Object.keys(v).forEach(k=>{ATT_COUNTS[k]=v[k]?Object.keys(v[k]).length:0;}); if((document.querySelector('.view.active')||{}).id==='view-meetups')renderMeetups(); },()=>{});
+  DB.ref('attendees').on('value',s=>{ ATT_RAW=s.val()||{}; ATT_COUNTS={}; Object.keys(ATT_RAW).forEach(k=>{ const ev=ATT_RAW[k]||{}; ATT_COUNTS[k]=Object.keys(ev).filter(u=>((ev[u]||{}).status)==='confirmed').length; }); if((document.querySelector('.view.active')||{}).id==='view-meetups')renderMeetups(); },()=>{});
   if(session&&session.uid){
     DB.ref('attendance/'+session.uid).on('value',s=>{ MY_ATT=s.val()||{}; const a=(document.querySelector('.view.active')||{}).id; if(a==='view-meetups')renderMeetups(); if(a==='view-mycontrib')renderMyProfile(); },()=>{});
   }
