@@ -536,29 +536,33 @@ function renderMatches(){
 }
 
 // ── GENERAL CHAT (Firebase-backed)
-let _chatSub=false;
+let _chatSub=false, _msgs={}, _reactions={};
 function chatRef(){return (DB||firebase.database()).ref('chat/general');}
+function paintChat(){
+  const host=document.getElementById('chatMsgs'); if(!host)return;
+  const keys=Object.keys(_msgs);
+  const myUid=SESSION&&SESSION.uid;
+  const isAdmin=!!(SESSION&&(SESSION.role==='admin'||SESSION.role==='owner'));
+  host.innerHTML = keys.length ? keys.map(k=>{
+    const m=_msgs[k]||{}; const mine=SESSION&&m.uid===SESSION.uid;
+    const t=m.at?new Date(m.at).toLocaleString([], {hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'}):'';
+    let tools='<span class="msg-tools">';
+    if(!mine) tools+='<button type="button" class="msg-tool msg-report" data-id="'+esc(k)+'" title="Report">⚑</button>';
+    if(isAdmin) tools+='<button type="button" class="msg-tool msg-mute" data-uid="'+esc(m.uid)+'" title="Mute user">🔇</button>';
+    if(isAdmin||mine) tools+='<button type="button" class="msg-tool msg-del" data-id="'+esc(k)+'" title="Delete">✕</button>';
+    tools+='</span>';
+    return '<div class="msg'+(mine?' mine':'')+'"><div><span class="who" style="color:'+ChatEnhance.nameColor(m.uid)+'">'+esc(m.name||'Member')+'</span><span class="tm">'+esc(t)+'</span>'+tools+'</div><div class="tx">'+esc(m.text||'')+'</div>'+ChatEnhance.renderEmbeds(m.text||'')+'<div class="msg-foot">'+ChatEnhance.renderReactions(k,_reactions[k],myUid)+'<button type="button" class="msg-react" data-id="'+esc(k)+'">＋</button></div></div>';
+  }).join('') : '<div class="empty">No messages yet — say hi 👋</div>';
+  ChatEnhance.bindChatHost(host,{uid:myUid,isAdmin:isAdmin});
+  host.scrollTop=host.scrollHeight;
+}
 function renderChat(){
   const host=document.getElementById('chatMsgs'); if(!host)return;
   if(_chatSub){ host.scrollTop=host.scrollHeight; return; }
   _chatSub=true;
-  chatRef().limitToLast(200).on('value',s=>{
-    const v=s.val()||{}; const keys=Object.keys(v);
-    const myUid=SESSION&&SESSION.uid;
-    const isAdmin=!!(SESSION&&(SESSION.role==='admin'||SESSION.role==='owner'));
-    host.innerHTML = keys.length ? keys.map(k=>{
-      const m=v[k]||{}; const mine=SESSION&&m.uid===SESSION.uid;
-      const t=m.at?new Date(m.at).toLocaleString([], {hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'}):'';
-      let tools='<span class="msg-tools">';
-      if(!mine) tools+='<button type="button" class="msg-tool msg-report" data-id="'+esc(k)+'" title="Report">⚑</button>';
-      if(isAdmin) tools+='<button type="button" class="msg-tool msg-mute" data-uid="'+esc(m.uid)+'" title="Mute user">🔇</button>';
-      if(isAdmin||mine) tools+='<button type="button" class="msg-tool msg-del" data-id="'+esc(k)+'" title="Delete">✕</button>';
-      tools+='</span>';
-      return '<div class="msg'+(mine?' mine':'')+'"><div><span class="who" style="color:'+ChatEnhance.nameColor(m.uid)+'">'+esc(m.name||'Member')+'</span><span class="tm">'+esc(t)+'</span>'+tools+'</div><div class="tx">'+esc(m.text||'')+'</div>'+ChatEnhance.renderEmbeds(m.text||'')+'<div class="msg-foot">'+ChatEnhance.renderReactions(k,m.reactions,myUid)+'<button type="button" class="msg-react" data-id="'+esc(k)+'">＋</button></div></div>';
-    }).join('') : '<div class="empty">No messages yet — say hi 👋</div>';
-    ChatEnhance.bindChatHost(host,{uid:myUid,isAdmin:isAdmin});
-    host.scrollTop=host.scrollHeight;
-  },e=>{ _chatSub=false; host.innerHTML='<div class="empty">Chat unavailable: '+esc(e.message)+'</div>'; });
+  ChatEnhance.watchReactions(function(r){ _reactions=r; paintChat(); });
+  chatRef().limitToLast(200).on('value',s=>{ _msgs=s.val()||{}; paintChat(); },
+    e=>{ _chatSub=false; host.innerHTML='<div class="empty">Chat unavailable: '+esc(e.message)+'</div>'; });
 }
 let _muted=null;
 document.getElementById('chatForm').addEventListener('submit',function(e){

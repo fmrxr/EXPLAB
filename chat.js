@@ -88,8 +88,13 @@
   };
   CE.toggleReaction = function (msgId, emoji, uid) {
     if (!uid || !emoji) return;
-    var ref = fb().ref('chat/general/' + msgId + '/reactions/' + emoji + '/' + uid);
-    ref.once('value').then(function (s) { if (s.val()) ref.remove(); else ref.set(true); });
+    var ref = fb().ref('chatReactions/general/' + msgId + '/' + emoji + '/' + uid);
+    ref.once('value').then(function (s) { return s.val() ? ref.remove() : ref.set(true); })
+      .catch(function (e) { if (window.console) console.warn('reaction failed:', e && e.message); });
+  };
+  CE.watchReactions = function (cb) {
+    try { fb().ref('chatReactions/general').on('value', function (s) { cb(s.val() || {}); }); }
+    catch (e) {}
   };
 
   // ---------- 3a. emoji picker ----------

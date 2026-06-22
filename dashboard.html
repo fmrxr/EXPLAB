@@ -1658,14 +1658,14 @@ window.renderMyProfile=renderMyProfile;window.pfSave=pfSave;window.pfAddSkill=pf
 
 // ── GENERAL CHAT
 let _chatSub=false;
-let _chatReports={};
+let _chatReports={}, _msgs={}, _reactions={};
 function chatRef(){return (db||firebase.database()).ref('chat/general');}
-function _renderChatRows(sn){
+function paintChat(){
   const host=document.getElementById('chatMsgs'); if(!host)return;
-  const v=sn.val()||{}; const ks=Object.keys(v); const me=pfSess();
+  const ks=Object.keys(_msgs); const me=pfSess();
   const isAdmin=(me.role==='admin'||me.role==='owner'); const myUid=me&&me.uid;
   host.innerHTML=ks.length?ks.map(k=>{
-    const m=v[k]||{};const mine=me&&m.uid===me.uid;
+    const m=_msgs[k]||{};const mine=me&&m.uid===me.uid;
     const t=m.at?new Date(m.at).toLocaleString([], {hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'}):'';
     const rc=(_chatReports[k]?Object.keys(_chatReports[k]).length:0);
     let tools='<span class="msg-tools">';
@@ -1673,7 +1673,7 @@ function _renderChatRows(sn){
     if(isAdmin)tools+='<button type="button" class="msg-tool msg-mute" data-uid="'+esc(m.uid)+'" title="Mute user">🔇</button>';
     if(isAdmin||mine)tools+='<button type="button" class="msg-tool msg-del" data-id="'+esc(k)+'" title="Delete">✕</button>';
     tools+='</span>';
-    return '<div class="pmsg'+(mine?' mine':'')+'"><div><span class="who" style="color:'+ChatEnhance.nameColor(m.uid)+'">'+esc(m.name||'Member')+'</span><span class="tm">'+esc(t)+'</span>'+tools+(isAdmin&&rc?'<span class="msg-reports">⚑ '+rc+'</span>':'')+'</div><div class="tx">'+esc(m.text||'')+'</div>'+ChatEnhance.renderEmbeds(m.text||'')+'<div class="msg-foot">'+ChatEnhance.renderReactions(k,m.reactions,myUid)+'<button type="button" class="msg-react" data-id="'+esc(k)+'">＋</button></div></div>';
+    return '<div class="pmsg'+(mine?' mine':'')+'"><div><span class="who" style="color:'+ChatEnhance.nameColor(m.uid)+'">'+esc(m.name||'Member')+'</span><span class="tm">'+esc(t)+'</span>'+tools+(isAdmin&&rc?'<span class="msg-reports">⚑ '+rc+'</span>':'')+'</div><div class="tx">'+esc(m.text||'')+'</div>'+ChatEnhance.renderEmbeds(m.text||'')+'<div class="msg-foot">'+ChatEnhance.renderReactions(k,_reactions[k],myUid)+'<button type="button" class="msg-react" data-id="'+esc(k)+'">＋</button></div></div>';
   }).join(''):'<div style="color:var(--tx3)">No messages yet — say hi 👋</div>';
   ChatEnhance.bindChatHost(host,{uid:myUid,isAdmin:isAdmin,toast:(typeof showToast==='function'?showToast:null)});
   host.scrollTop=host.scrollHeight;
@@ -1683,8 +1683,9 @@ function renderChat(){
   chatModInit();
   if(_chatSub){host.scrollTop=host.scrollHeight;return;}
   _chatSub=true;
-  { const me0=pfSess(); if(me0&&(me0.role==='admin'||me0.role==='owner')){ chatRef().root.child('chatReports/general').on('value',function(rs){ _chatReports=rs.val()||{}; chatRef().limitToLast(200).once('value').then(_renderChatRows); }); } }
-  chatRef().limitToLast(200).on('value',_renderChatRows,e=>{_chatSub=false;const h=document.getElementById('chatMsgs');if(h)h.innerHTML='<div style="color:var(--red)">Chat unavailable: '+esc(e.message)+'</div>';});
+  ChatEnhance.watchReactions(function(r){ _reactions=r; paintChat(); });
+  { const me0=pfSess(); if(me0&&(me0.role==='admin'||me0.role==='owner')){ chatRef().root.child('chatReports/general').on('value',function(rs){ _chatReports=rs.val()||{}; paintChat(); }); } }
+  chatRef().limitToLast(200).on('value',s=>{ _msgs=s.val()||{}; paintChat(); },e=>{_chatSub=false;const h=document.getElementById('chatMsgs');if(h)h.innerHTML='<div style="color:var(--red)">Chat unavailable: '+esc(e.message)+'</div>';});
 }
 window.renderChat=renderChat;
 let _muted=null;
