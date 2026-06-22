@@ -1680,6 +1680,7 @@ function _renderChatRows(sn){
 }
 function renderChat(){
   const host=document.getElementById('chatMsgs'); if(!host)return;
+  chatModInit();
   if(_chatSub){host.scrollTop=host.scrollHeight;return;}
   _chatSub=true;
   { const me0=pfSess(); if(me0&&(me0.role==='admin'||me0.role==='owner')){ chatRef().root.child('chatReports/general').on('value',function(rs){ _chatReports=rs.val()||{}; chatRef().limitToLast(200).once('value').then(_renderChatRows); }); } }
@@ -1699,27 +1700,32 @@ document.getElementById('chatForm').addEventListener('submit',function(e){
   inp.value='';
   chatRef().push({uid:s.uid,name:s.name||currentUser||'Member',text:text,at:Date.now()}).catch(err=>{inp.value=text;if(note)note.textContent='Could not send: '+err.message;});
 });
-ChatEnhance.loadBannedWords();
-(function(){ var s=pfSess(); if(s&&s.uid) ChatEnhance.watchMyMute(s.uid,function(m){
-  _muted=m;
-  var inp=document.getElementById('chatText'); var note=document.getElementById('chatNote');
-  if(ChatEnhance.isMutedNow(m)){ if(inp){inp.disabled=true;inp.placeholder='You are muted '+ChatEnhance.formatUntil(m.until);} }
-  else { if(inp){inp.disabled=false;inp.placeholder='Message the community…';} if(note)note.textContent=''; }
-}); })();
-(function(){
-  var s=pfSess(); if(!(s&&(s.role==='admin'||s.role==='owner'))) return;
-  var ed=document.getElementById('bwEditor'); if(ed) ed.style.display='';
-  var ta=document.getElementById('bwText'), btn=document.getElementById('bwSave');
-  if(!ta||!btn) return;
-  chatRef().root.child('siteConfig/bannedWords').once('value').then(function(sn){
-    var v=sn.val(); ta.value=Array.isArray(v)?v.join(', '):(v||'');
+let _chatModInit=false;
+function chatModInit(){
+  if(_chatModInit) return; _chatModInit=true;
+  ChatEnhance.loadBannedWords();
+  var s=pfSess();
+  if(s&&s.uid) ChatEnhance.watchMyMute(s.uid,function(m){
+    _muted=m;
+    var inp=document.getElementById('chatText'); var note=document.getElementById('chatNote');
+    if(ChatEnhance.isMutedNow(m)){ if(inp){inp.disabled=true;inp.placeholder='You are muted '+ChatEnhance.formatUntil(m.until);} }
+    else { if(inp){inp.disabled=false;inp.placeholder='Message the community…';} if(note)note.textContent=''; }
   });
-  btn.addEventListener('click',function(){
-    var list=ta.value.split(/[\n,]+/).map(function(w){return w.trim();}).filter(Boolean);
-    chatRef().root.child('siteConfig/bannedWords').set(list).then(function(){ if(typeof showToast==='function')showToast('Banned list saved ✓'); })
-      .catch(function(err){ alert('Save failed: '+err.message); });
-  });
-})();
+  if(s&&(s.role==='admin'||s.role==='owner')){
+    var ed=document.getElementById('bwEditor'); if(ed) ed.style.display='';
+    var ta=document.getElementById('bwText'), btn=document.getElementById('bwSave');
+    if(ta&&btn){
+      chatRef().root.child('siteConfig/bannedWords').once('value').then(function(sn){
+        var v=sn.val(); ta.value=Array.isArray(v)?v.join(', '):(v||'');
+      });
+      btn.addEventListener('click',function(){
+        var list=ta.value.split(/[\n,]+/).map(function(w){return w.trim();}).filter(Boolean);
+        chatRef().root.child('siteConfig/bannedWords').set(list).then(function(){ if(typeof showToast==='function')showToast('Banned list saved ✓'); })
+          .catch(function(err){ alert('Save failed: '+err.message); });
+      });
+    }
+  }
+}
 
 // ═══════════════════════════════════════════════════
 //  HELPERS
