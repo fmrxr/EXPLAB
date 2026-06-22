@@ -89,10 +89,37 @@ textarea.pf-in{resize:vertical;line-height:1.5}
 .chat-input{display:flex;gap:.5rem;padding:.7rem;border-top:1px solid var(--bdr)}
 .chat-input input{flex:1;padding:.7rem .9rem;background:var(--s2);border:1px solid var(--bdr);color:var(--tx);font-family:inherit;font-size:13px;border-radius:2px}
 .chat-input input:focus{outline:none;border-color:var(--bdr2)}
-@media(max-width:780px){.sidebar{width:52px}.sb-item span,.sb-sec,.soon-tag{display:none}.sb-item{justify-content:center;padding:.7rem}.main{padding:1.25rem}.msg{max-width:88%}}
+/* boot loader (visibility:visible so it shows while auth-guard hides the page) */
+#bootLoader{position:fixed;inset:0;z-index:9999;background:var(--blk);display:flex;align-items:center;justify-content:center;visibility:visible!important;transition:opacity .5s ease}
+#bootLoader.hide{opacity:0;pointer-events:none}
+.bl-inner{display:flex;flex-direction:column;align-items:center;gap:1rem}
+.bl-mark{position:relative;font-size:clamp(64px,12vw,110px);line-height:1;color:var(--or);font-weight:700;animation:bl-pulse 1.6s ease-in-out infinite}
+.bl-mark::before,.bl-mark::after{content:attr(data-t);position:absolute;inset:0}
+.bl-mark::before{color:#ff3b6b;animation:bl-glitch 2.2s infinite steps(2);clip-path:inset(0 0 55% 0)}
+.bl-mark::after{color:#3ab8eb;animation:bl-glitch 1.7s infinite reverse steps(2);clip-path:inset(55% 0 0 0)}
+.bl-word{font-family:'Courier Prime',monospace;font-size:13px;letter-spacing:.4em;color:var(--tx3);text-indent:.4em}
+.bl-word b{color:var(--or)}
+.bl-bar{width:160px;height:2px;background:rgba(255,255,255,.08);overflow:hidden;position:relative}
+.bl-bar span{position:absolute;left:0;top:0;height:100%;width:40%;background:var(--or);animation:bl-load 1.1s ease-in-out infinite}
+.bl-sub{font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--tx4)}
+@keyframes bl-pulse{0%,100%{opacity:.85;transform:scale(.97)}50%{opacity:1;transform:scale(1.03)}}
+@keyframes bl-load{0%{left:-40%}100%{left:100%}}
+@keyframes bl-glitch{0%,92%,100%{transform:translate(0,0);opacity:0}93%{opacity:.7;transform:translate(-2px,1px)}96%{opacity:.7;transform:translate(2px,-1px)}}
+@media(prefers-reduced-motion:reduce){.bl-mark,.bl-mark::before,.bl-mark::after,.bl-bar span{animation:none}}
+@media(max-width:780px){.sidebar{width:52px}.sb-item span,.sb-sec,.soon-tag{display:none}.sb-item{justify-content:center;padding:.7rem}.main{padding:1.25rem 1rem;max-width:100%}.msg{max-width:88%}
+  .mt{display:block;width:100%;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch}
+  .ph-title{font-size:21px}.grid{grid-template-columns:1fr!important}.chat{height:calc(100vh - 230px)}}
 </style>
 </head>
 <body>
+<div id="bootLoader">
+  <div class="bl-inner">
+    <div class="bl-mark" data-t="ⵣ">ⵣ</div>
+    <div class="bl-word">EXP<b>LAB</b></div>
+    <div class="bl-bar"><span></span></div>
+    <div class="bl-sub">Loading your space…</div>
+  </div>
+</div>
 <div class="topbar">
   <a class="tb-logo" href="index.html">EXP<b>LAB</b><span class="tb-tag">Member</span></a>
   <div class="tb-right">
@@ -499,8 +526,11 @@ document.getElementById('chatForm').addEventListener('submit',function(e){
 });
 
 // ── BOOT
+function hideBoot(){const b=document.getElementById('bootLoader');if(b)b.classList.add('hide');}
+setTimeout(hideBoot,5000);
 function boot(session){
   SESSION=session; DB=firebase.database();
+  hideBoot();
   document.getElementById('userName').textContent=(session&&session.name)||'Member';
   if(session && (session.role==='owner'||session.role==='admin')){ const al=document.getElementById('adminLink'); if(al) al.style.display=''; }
   DB.ref('members').on('value',s=>{

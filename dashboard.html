@@ -137,6 +137,45 @@ html,body{min-height:100vh;background:var(--blk);color:var(--tx);font-family:'Sp
 .sb-item.soon{opacity:.4;cursor:default}
 .sb-item.soon:hover{background:none;color:var(--tx2)}
 .soon-tag{margin-left:auto;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--tx4);border:1px solid var(--bdr);border-radius:8px;padding:0 5px}
+/* profile editor + chat (ported) */
+.pf-in{width:100%;padding:.6rem .8rem;background:var(--s2);border:1px solid var(--bdr);color:var(--tx);font-family:inherit;font-size:13px;border-radius:2px;box-sizing:border-box}
+.pf-in:focus{outline:none;border-color:var(--bdr2)}
+textarea.pf-in{resize:vertical;line-height:1.5}
+.pf-grid{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+#view-myskills label,#view-myprojects label,#view-mycontrib label{display:block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--tx3);margin-bottom:3px}
+.pf-chips{display:flex;flex-wrap:wrap;gap:.3rem}
+.pf-chips .tag{display:inline-block;font-size:11px;color:var(--tx2);background:var(--s2);border:1px solid var(--bdr);padding:3px 9px;border-radius:2px;cursor:pointer;user-select:none}
+.pf-chips .tag.on{color:var(--or);border-color:var(--bdr2)}
+.pf-chips .tag:hover{border-color:var(--bdr2)}
+.pf-skill{display:flex;align-items:center;justify-content:space-between;gap:.6rem;padding:.3rem 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.pf-skill span{font-size:13px;color:var(--tx)}
+.pf-skill-lv{background:var(--s2);border:1px solid var(--bdr);color:var(--tx);font-family:inherit;font-size:12px;padding:.25rem .4rem;border-radius:2px;flex-shrink:0}
+.pchat{display:flex;flex-direction:column;height:calc(100vh - 200px);min-height:340px;border:1px solid var(--bdr);border-radius:2px;background:var(--s1)}
+.pchat-msgs{flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:.55rem}
+.pmsg{max-width:74%;padding:.5rem .8rem;background:var(--s2);border:1px solid var(--bdr);border-radius:10px;align-self:flex-start}
+.pmsg.mine{align-self:flex-end;background:rgba(235,101,3,.08);border-color:var(--bdr2)}
+.pmsg .who{font-size:10px;color:var(--or);font-weight:700}
+.pmsg .tm{font-size:9px;color:var(--tx4);margin-left:.4rem}
+.pmsg .tx{font-size:13px;color:var(--tx);margin-top:2px;white-space:pre-wrap;word-break:break-word;line-height:1.5}
+.pchat-input{display:flex;gap:.5rem;padding:.7rem;border-top:1px solid var(--bdr)}
+.pchat-input input{flex:1;padding:.7rem .9rem;background:var(--s2);border:1px solid var(--bdr);color:var(--tx);font-family:inherit;font-size:13px;border-radius:2px}
+/* boot loader */
+#bootLoader{position:fixed;inset:0;z-index:9999;background:var(--blk);display:flex;align-items:center;justify-content:center;transition:opacity .5s ease,visibility .5s}
+#bootLoader.hide{opacity:0;visibility:hidden;pointer-events:none}
+.bl-inner{display:flex;flex-direction:column;align-items:center;gap:1rem}
+.bl-mark{position:relative;font-size:clamp(64px,12vw,110px);line-height:1;color:var(--or);font-weight:700;animation:bl-pulse 1.6s ease-in-out infinite}
+.bl-mark::before,.bl-mark::after{content:attr(data-t);position:absolute;inset:0;}
+.bl-mark::before{color:#ff3b6b;animation:bl-glitch 2.2s infinite steps(2);clip-path:inset(0 0 55% 0)}
+.bl-mark::after{color:#3ab8eb;animation:bl-glitch 1.7s infinite reverse steps(2);clip-path:inset(55% 0 0 0)}
+.bl-word{font-family:'Courier Prime',monospace;font-size:13px;letter-spacing:.4em;color:var(--tx3);text-indent:.4em}
+.bl-word b{color:var(--or)}
+.bl-bar{width:160px;height:2px;background:rgba(255,255,255,.08);overflow:hidden;position:relative}
+.bl-bar span{position:absolute;left:0;top:0;height:100%;width:40%;background:var(--or);animation:bl-load 1.1s ease-in-out infinite}
+.bl-sub{font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--tx4)}
+@keyframes bl-pulse{0%,100%{opacity:.85;transform:scale(.97)}50%{opacity:1;transform:scale(1.03)}}
+@keyframes bl-load{0%{left:-40%}100%{left:100%}}
+@keyframes bl-glitch{0%,92%,100%{transform:translate(0,0);opacity:0}93%{opacity:.7;transform:translate(-2px,1px)}96%{opacity:.7;transform:translate(2px,-1px)}}
+@media(prefers-reduced-motion:reduce){.bl-mark,.bl-mark::before,.bl-mark::after,.bl-bar span{animation:none}}
 .sb-dot{width:5px;height:5px;background:currentColor;transform:rotate(45deg);flex-shrink:0}
 .sb-bot{padding:1rem 1.25rem;border-top:1px solid var(--bdr)}
 .bti{width:100%;background:var(--or);color:#000;border:none;
@@ -467,9 +506,30 @@ html,body{min-height:100vh;background:var(--blk);color:var(--tx);font-family:'Sp
   .match-card{grid-template-columns:1fr;text-align:center}
 }
 @media(max-width:600px){.kpi-grid{grid-template-columns:1fr 1fr}.mem-grid{grid-template-columns:1fr}}
+/* mobile polish */
+@media(max-width:760px){
+  .main{padding:1.25rem 1rem;max-width:100%}
+  .ph-title{font-size:20px}
+  .data-table,.mt{display:block;width:100%;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch}
+  .pf-grid{grid-template-columns:1fr}
+  #view-events #evList{grid-template-columns:1fr}
+  .pchat{height:calc(100vh - 230px)}
+  .pf-chips .tag{font-size:12px;padding:5px 11px}
+}
+@media(max-width:420px){.kpi-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
+
+<!-- ══ BOOT LOADER ══ -->
+<div id="bootLoader">
+  <div class="bl-inner">
+    <div class="bl-mark" data-t="ⵣ">ⵣ</div>
+    <div class="bl-word">EXP<b>LAB</b></div>
+    <div class="bl-bar"><span></span></div>
+    <div class="bl-sub">Initializing dashboard…</div>
+  </div>
+</div>
 
 <!-- ══ LOGIN ══ -->
 <div class="login-screen" id="loginScreen">
@@ -586,6 +646,14 @@ html,body{min-height:100vh;background:var(--blk);color:var(--tx);font-family:'Sp
     <div class="sb-item soon"><div class="sb-dot"></div><span>Community Projects</span><span class="soon-tag">soon</span></div>
     <div class="sb-item soon"><div class="sb-dot"></div><span>Open Calls</span><span class="soon-tag">soon</span></div>
     <div class="sb-item soon"><div class="sb-dot"></div><span>Archive</span><span class="soon-tag">soon</span></div>
+
+    <div class="sb-sec">My Profile</div>
+    <div class="sb-item" onclick="sv('myskills',this)"><div class="sb-dot" style="background:var(--grn)"></div><span>My Skills</span></div>
+    <div class="sb-item" onclick="sv('myprojects',this)"><div class="sb-dot" style="background:var(--grn)"></div><span>My Projects</span></div>
+    <div class="sb-item" onclick="sv('mycontrib',this)"><div class="sb-dot" style="background:var(--grn)"></div><span>My Contributions</span></div>
+
+    <div class="sb-sec">Spaces</div>
+    <div class="sb-item" onclick="sv('chat',this)"><div class="sb-dot" style="background:var(--grn)"></div><span>General Chat</span></div>
 
     <div class="sb-sec">System</div>
     <div class="sb-item" onclick="sv('log',this)"><div class="sb-dot"></div><span>Activity Log</span></div>
@@ -796,6 +864,32 @@ html,body{min-height:100vh;background:var(--blk);color:var(--tx);font-family:'Sp
     </div>
 
     <div id="evList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem"></div>
+  </div>
+
+  <!-- ══ MY PROFILE ══ -->
+  <div class="view" id="view-myskills">
+    <div class="ph"><div><div class="ph-title">My Skills</div><div class="ph-sub">Tools I know · things I want to learn — editable</div></div></div>
+    <div id="mySkillsBody"><div style="color:var(--tx3)">Loading your profile…</div></div>
+  </div>
+  <div class="view" id="view-myprojects">
+    <div class="ph"><div><div class="ph-title">My Projects</div><div class="ph-sub">Current experiments · availability · collaboration — editable</div></div></div>
+    <div id="myProjectsBody"><div style="color:var(--tx3)">Loading your profile…</div></div>
+  </div>
+  <div class="view" id="view-mycontrib">
+    <div class="ph"><div><div class="ph-title">My Contributions</div><div class="ph-sub">What I bring · hardware · workshops joined</div></div></div>
+    <div id="myContribBody"><div style="color:var(--tx3)">Loading your profile…</div></div>
+  </div>
+
+  <!-- ══ SPACES — GENERAL CHAT ══ -->
+  <div class="view" id="view-chat">
+    <div class="ph"><div><div class="ph-title">General Chat</div><div class="ph-sub">Community conversation · be kind, share freely</div></div></div>
+    <div class="pchat">
+      <div class="pchat-msgs" id="chatMsgs"><div style="color:var(--tx3)">Loading…</div></div>
+      <form class="pchat-input" id="chatForm">
+        <input id="chatText" placeholder="Message the community…" autocomplete="off" maxlength="500">
+        <button class="au-btn" type="submit" style="background:var(--or);color:#000;border-color:var(--or)">Send</button>
+      </form>
+    </div>
   </div>
 
   <!-- ══ TOOLS FOR THE COMMUNITY — DATA ANALYSIS ══ -->
@@ -1035,7 +1129,8 @@ function finishLogin(name,guest=false){
   const isAdmin = session && (session.role==='admin' || session.role==='owner');
   const isOwner = session && session.role==='owner';
   // Non-admin members belong in the member dashboard (separate page).
-  if(!guest && session && !isAdmin){ location.replace('member.html'); return; }
+  if(!guest && session && !isAdmin){ location.replace('member.html'); return; } // loader stays up through redirect
+  hideBoot();
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('topBar').style.display='flex';
   document.getElementById('appBody').style.display='flex';
@@ -1222,7 +1317,7 @@ function setupDrop(){
 function sv(name,btn){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.querySelectorAll('.sb-item').forEach(b=>b.classList.remove('active'));
-  if(members.length===0&&name!=='log'&&name!=='admin'&&name!=='roadmap'&&name!=='tools'&&name!=='overview'&&name!=='directory'&&name!=='waitlist'&&name!=='events'){
+  if(members.length===0&&name!=='log'&&name!=='admin'&&name!=='roadmap'&&name!=='tools'&&name!=='overview'&&name!=='directory'&&name!=='waitlist'&&name!=='events'&&name!=='chat'&&name!=='myskills'&&name!=='myprojects'&&name!=='mycontrib'){
     document.getElementById('view-empty').classList.add('active');
     return;
   }
@@ -1230,7 +1325,8 @@ function sv(name,btn){
   if(el)el.classList.add('active');
   if(btn)btn.classList.add('active');
   const fn={overview:renderOverview,skills:renderSkills,hardware:renderHardware,
-             gaps:renderGaps,matches:renderMatches,directory:renderDirectory,log:renderLog,admin:renderAdmin,roadmap:renderRoadmap,tools:renderTools,waitlist:renderWaitlist,events:renderEvents};
+             gaps:renderGaps,matches:renderMatches,directory:renderDirectory,log:renderLog,admin:renderAdmin,roadmap:renderRoadmap,tools:renderTools,waitlist:renderWaitlist,events:renderEvents,
+             chat:renderChat,myskills:renderMyProfile,myprojects:renderMyProfile,mycontrib:renderMyProfile};
   fn[name]?.();
   if(currentUser&&name!=='empty')logEv(currentUser,'view','→ '+name);
 }
@@ -1453,6 +1549,92 @@ function evSeed(){
   });
 }
 window.renderEvents=renderEvents;window.evOpenForm=evOpenForm;window.evCloseForm=evCloseForm;window.evAddRow=evAddRow;window.evSave=evSave;window.evDelete=evDelete;window.evSetActive=evSetActive;window.evSeed=evSeed;
+
+// ═══════════════════════════════════════════════════
+//  MY PROFILE (editable) + GENERAL CHAT  (ported for admins)
+// ═══════════════════════════════════════════════════
+const esc=escTools;
+const pcap=s=>String(s||'').charAt(0).toUpperCase()+String(s||'').slice(1);
+const parr=v=>Array.isArray(v)?v:(v&&typeof v==='object'?Object.keys(v):(v?[v]:[]));
+function pfmtDate(d){ if(!d) return ''; const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(d); return m?(m[3]+'/'+m[2]+'/'+m[1]):d; }
+const OPT={
+  zone:['Centre-ville','La Marsa','Ariana','Ben Arous','Manouba','Banlieue Nord','Banlieue Sud','Outside Tunis'],
+  disc:['Visual Art','Music / Sound','Interaction Design','Graphic Design','Performance / Theatre','Film / Video','Architecture / Space','Engineering / Electronics','Programming / Dev','New Media Art','Research / Theory','Education / Pedagogy','Photography','Illustration','Game Design'],
+  level:['Learning','Intermediate','Experienced','Expert'],
+  hw:['Arduino','Raspberry Pi','ESP32/8266','Teensy','Jetson Nano','Bela','STM32','Kinect / Depth cam','LiDAR','Ultrasonic','IR sensors','CV Camera','EEG / biosensors','Pressure / FSR','Accelerometer / IMU','Flex sensors','Laser / DMX','MIDI controllers','OSC / DMX','LED strips (NeoPixel etc)','Projector mapping','LED matrix','Servo / motors','Stepper motors','3D printer','Laser cutter','Plotter','Audio interface','Synthesizer','Modular synth','Video mixer','DJ equipment','Camera (photo/video)','Scanner / digitizer'],
+  freq:['Every one','Most of them','Occasionally','Lurker for now'],
+  days:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+  time:['Morning','Afternoon','Evening'],
+  commit:{1:'Just curious',2:'Occasional',3:'Contributor',4:'Active member',5:'Core / all-in'},
+  org:['Facilitate workshops','Help with events','Design / comms','Tech setup','Documentation','Not right now'],
+  them:['Generative visuals','Live A/V performance','Interactive installations','Data visualization','Physical computing','Machine learning / AI','Wearables','Sound synthesis','Net art','Game / XR','Bio / ecology','Archival / heritage','Community tools','Experimental music','Robotics / mechatronics','Textiles / craft'],
+  collab:['Actively seeking','Open to it','Solo for now','Just watching'],
+  role:['Technical lead','Concept / direction','Visual / aesthetic','Sound / music','Hardware / fabrication','Research / writing','Project coordination','Documentation','Testing / feedback'],
+  fmt:['Short sprints','Long-term project','Workshop / jam session','Online / async','In-person only','Performance / show','Residency'],
+  levelLabels:['','Aware','Trying','Comfortable','Fluent','Expert'],
+  skills:['TouchDesigner','Processing','openFrameworks','VVVV','Notch','Resolume','MadMapper','Millumin','Hydra','Unity','Unreal','Blender','Ableton Live','Max/MSP','SuperCollider','Pure Data','Reaktor','Logic Pro','Reaper','VCV Rack','TidalCycles','Sonic Pi','After Effects','Premiere','DaVinci Resolve','Photoshop','Illustrator','Figma','Cinema 4D','Houdini','ZBrush','Python','JavaScript','C++','C#','Rust','GLSL / Shaders','p5.js','Three.js','openCV','TensorFlow / PyTorch']
+};
+let _pfMe=null,_pfAtt={},_pfSubMe=false,_pfSubAtt=false;
+function pfSess(){return ExplabAuth.getSession()||{};}
+function pfVal(id){const e=document.getElementById(id);return e?e.value.trim():'';}
+function fText(id,val,ml,ph){return ml?'<textarea id="'+id+'" rows="3" class="pf-in" placeholder="'+esc(ph||'')+'">'+esc(val||'')+'</textarea>':'<input id="'+id+'" class="pf-in" value="'+esc(val||'')+'" placeholder="'+esc(ph||'')+'">';}
+function fSelect(id,val,opts){return '<select id="'+id+'" class="pf-in"><option value="">—</option>'+opts.map(o=>'<option'+(String(o)===String(val)?' selected':'')+'>'+esc(o)+'</option>').join('')+'</select>';}
+function fCommit(id,val){return '<select id="'+id+'" class="pf-in"><option value="">—</option>'+[1,2,3,4,5].map(i=>'<option value="'+i+'"'+(String(i)===String(val)?' selected':'')+'>'+i+' · '+esc(OPT.commit[i])+'</option>').join('')+'</select>';}
+function fChips(cat,selected,opts){const sel=new Set(parr(selected).map(String));return '<div class="pf-chips" data-cat="'+cat+'">'+opts.map(o=>'<span class="tag'+(sel.has(o)?' on':'')+'" onclick="this.classList.toggle(\'on\')">'+esc(o)+'</span>').join('')+'</div>';}
+function collectChips(cat){return [...document.querySelectorAll('.pf-chips[data-cat="'+cat+'"] .tag.on')].map(c=>c.textContent.trim());}
+function fSkills(sw){const cur=sw||{};const names=[...new Set(OPT.skills.concat(Object.keys(cur)))];return '<div id="pfSkills">'+names.map(n=>{const lv=(cur[n]&&cur[n].level)||0;return '<div class="pf-skill" data-name="'+esc(n)+'"><span>'+esc(n)+'</span><select class="pf-skill-lv">'+[0,1,2,3,4,5].map(i=>'<option value="'+i+'"'+(i===lv?' selected':'')+'>'+(i===0?'—':esc(OPT.levelLabels[i]))+'</option>').join('')+'</select></div>';}).join('')+'</div><div style="margin-top:.5rem;display:flex;gap:.4rem"><input id="pfSkillNew" class="pf-in" placeholder="Add another tool…" style="flex:1"><button class="au-btn" type="button" onclick="pfAddSkill()">+ Add</button></div>';}
+function pfAddSkill(){const inp=document.getElementById('pfSkillNew');const n=(inp.value||'').trim();if(!n)return;document.getElementById('pfSkills').insertAdjacentHTML('beforeend','<div class="pf-skill" data-name="'+esc(n)+'"><span>'+esc(n)+'</span><select class="pf-skill-lv">'+[0,1,2,3,4,5].map(i=>'<option value="'+i+'"'+(i===3?' selected':'')+'>'+(i===0?'—':esc(OPT.levelLabels[i]))+'</option>').join('')+'</select></div>');inp.value='';}
+function collectSkills(){const o={};document.querySelectorAll('#pfSkills .pf-skill').forEach(r=>{const lv=parseInt(r.querySelector('.pf-skill-lv').value||0);if(lv>0)o[r.dataset.name]={level:lv,label:OPT.levelLabels[lv]};});return o;}
+function pfSaveBtn(section){return '<div style="margin-top:1.25rem"><button class="au-btn" style="background:var(--or);color:#000;border-color:var(--or)" onclick="pfSave(\''+section+'\')">Save changes</button></div>';}
+function pfSave(section){
+  const s=pfSess(); if(!s.memberId){alert('Your admin account has no linked member profile. Fill the member form to create one.');return;}
+  const ref=(db||firebase.database()).ref('members/'+s.memberId); const u={};
+  if(section==='skills'){u['identity/name']=pfVal('pf_name');u['identity/handle']=pfVal('pf_handle');u['identity/bio']=pfVal('pf_bio');u['identity/zone']=collectChips('zone');u['discipline/fields']=collectChips('disc');u['discipline/other']=pfVal('pf_discOther');u['discipline/level']=pfVal('pf_level');u['software']=collectSkills();u['projects/toLearn']=pfVal('pf_toLearn');}
+  else if(section==='projects'){u['projects/idea']=pfVal('pf_idea');u['projects/themes']=collectChips('them');u['availability/frequency']=pfVal('pf_freq');u['availability/days']=collectChips('days');u['availability/times']=collectChips('time');u['availability/commitment']=pfVal('pf_commit');u['availability/commitLabel']=OPT.commit[pfVal('pf_commit')]||'';u['availability/organising']=collectChips('org');u['collaboration/appetite']=pfVal('pf_collab');u['collaboration/roles']=collectChips('role');u['collaboration/lookingFor']=pfVal('pf_lookingFor');u['collaboration/formats']=collectChips('fmt');u['collaboration/freeText']=pfVal('pf_freeText');}
+  else if(section==='contrib'){u['projects/toTeach']=pfVal('pf_toTeach');u['hardware/items']=collectChips('hw');u['hardware/owned']=pfVal('pf_owned');}
+  ref.update(u).then(()=>{showToast('Profile saved ✓');logEv(currentUser||'admin','profile','Updated '+section);}).catch(e=>alert('Save failed: '+e.message));
+}
+function renderMyProfile(){
+  const s=pfSess();
+  const skillsB=document.getElementById('mySkillsBody'),projB=document.getElementById('myProjectsBody'),contB=document.getElementById('myContribBody');
+  if(!s.memberId){const msg='<div class="admin-section"><div style="color:var(--tx2);font-size:13px;line-height:1.7">Your account isn\'t linked to a member profile. Fill the member form to create one — then you can edit it here.</div><div style="margin-top:1rem"><a class="au-btn" href="member-form.html">Open member form →</a></div></div>';if(skillsB)skillsB.innerHTML=msg;if(projB)projB.innerHTML=msg;if(contB)contB.innerHTML=msg;return;}
+  if(!_pfSubMe){_pfSubMe=true;(db||firebase.database()).ref('members/'+s.memberId).on('value',sn=>{_pfMe=sn.val()||{};_pfPaint();},()=>{});}
+  if(!_pfSubAtt&&s.uid){_pfSubAtt=true;(db||firebase.database()).ref('attendance/'+s.uid).on('value',sn=>{_pfAtt=sn.val()||{};_pfPaint();},()=>{});}
+  _pfPaint();
+}
+function _pfPaint(){
+  const ME=_pfMe; if(!ME) return;
+  const s=pfSess();
+  const id=ME.identity||{},disc=ME.discipline||{},proj=ME.projects||{},collab=ME.collaboration||{},avail=ME.availability||{},hw=ME.hardware||{};
+  const skillsB=document.getElementById('mySkillsBody'),projB=document.getElementById('myProjectsBody'),contB=document.getElementById('myContribBody');
+  if(skillsB)skillsB.innerHTML='<div class="admin-section"><div class="admin-st">Profile</div><div class="pf-grid"><div><label>Name</label>'+fText('pf_name',id.name)+'</div><div><label>Handle</label>'+fText('pf_handle',id.handle,false,'@handle')+'</div></div><div style="margin-top:.5rem"><label>Email</label><input class="pf-in" value="'+esc(id.email||s.email||'')+'" disabled></div><div style="margin-top:.5rem"><label>Bio</label>'+fText('pf_bio',id.bio,true,'A line about you…')+'</div><div style="margin-top:.5rem"><label>Zone</label>'+fChips('zone',id.zone,OPT.zone)+'</div><div class="admin-st" style="margin-top:1rem">Disciplines</div>'+fChips('disc',disc.fields,OPT.disc)+'<div class="pf-grid" style="margin-top:.5rem"><div><label>Other discipline</label>'+fText('pf_discOther',disc.other)+'</div><div><label>Experience level</label>'+fSelect('pf_level',disc.level,OPT.level)+'</div></div><div class="admin-st" style="margin-top:1rem">Tools I know</div>'+fSkills(ME.software)+'<div class="admin-st" style="margin-top:1rem">Things I want to learn</div>'+fText('pf_toLearn',proj.toLearn,true)+pfSaveBtn('skills')+'</div>';
+  if(projB)projB.innerHTML='<div class="admin-section"><div class="admin-st">Current experiment</div>'+fText('pf_idea',proj.idea,true,'What are you building?')+'<div class="admin-st" style="margin-top:1rem">Themes</div>'+fChips('them',proj.themes,OPT.them)+'<div class="admin-st" style="margin-top:1rem">Availability</div><div class="pf-grid"><div><label>Frequency</label>'+fSelect('pf_freq',avail.frequency,OPT.freq)+'</div><div><label>Commitment</label>'+fCommit('pf_commit',avail.commitment)+'</div></div><div style="margin-top:.5rem"><label>Days</label>'+fChips('days',avail.days,OPT.days)+'</div><div style="margin-top:.5rem"><label>Times</label>'+fChips('time',avail.times,OPT.time)+'</div><div style="margin-top:.5rem"><label>Happy to help organise</label>'+fChips('org',avail.organising,OPT.org)+'</div><div class="admin-st" style="margin-top:1rem">Collaboration</div><div><label>Appetite</label>'+fSelect('pf_collab',collab.appetite,OPT.collab)+'</div><div style="margin-top:.5rem"><label>Roles I can take</label>'+fChips('role',collab.roles,OPT.role)+'</div><div style="margin-top:.5rem"><label>Preferred formats</label>'+fChips('fmt',collab.formats,OPT.fmt)+'</div><div style="margin-top:.5rem"><label>Looking to collaborate on</label>'+fText('pf_lookingFor',collab.lookingFor,true)+'</div><div style="margin-top:.5rem"><label>Anything else</label>'+fText('pf_freeText',collab.freeText,true)+'</div>'+pfSaveBtn('projects')+'</div>';
+  if(contB){const att=Object.keys(_pfAtt||{}).map(k=>Object.assign({id:k},_pfAtt[k])).sort((a,b)=>(b.at||0)-(a.at||0));const list=att.length?att.map(a=>{const ev=(_evCache||{})[a.id]||{};const type=a.type||ev.type||'';const num=a.number||ev.number||'';const date=pfmtDate(ev.date)||(a.at?new Date(a.at).toLocaleDateString():'');return '<div class="card" style="background:var(--s1);border:1px solid var(--bdr);padding:.7rem .9rem;border-radius:2px;margin-bottom:.5rem;display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:700;color:var(--tx)">'+esc(pcap(type))+' #'+esc(num)+'</div><div style="font-size:11px;color:var(--tx3)">'+esc(date)+'</div></div><span class="pill" style="background:rgba(63,235,3,.12);color:var(--grn);font-size:9px;text-transform:uppercase;letter-spacing:.1em;padding:2px 7px;border-radius:8px;font-weight:700">Going</span></div>';}).join(''):'<div style="color:var(--tx3);font-size:13px;padding:.5rem 0">No events joined yet — see Events.</div>';
+    contB.innerHTML='<div class="admin-section"><div class="admin-st">What I can bring / teach</div>'+fText('pf_toTeach',proj.toTeach,true)+'<div class="admin-st" style="margin-top:1rem">Hardware I own / can share</div>'+fChips('hw',hw.items,OPT.hw)+'<div style="margin-top:.5rem"><label>Other hardware</label>'+fText('pf_owned',hw.owned,true)+'</div>'+pfSaveBtn('contrib')+'</div><div class="admin-section"><div class="admin-st">Workshops joined</div>'+list+'</div>';}
+}
+window.renderMyProfile=renderMyProfile;window.pfSave=pfSave;window.pfAddSkill=pfAddSkill;
+
+// ── GENERAL CHAT
+let _chatSub=false;
+function chatRef(){return (db||firebase.database()).ref('chat/general');}
+function renderChat(){
+  const host=document.getElementById('chatMsgs'); if(!host)return;
+  if(_chatSub){host.scrollTop=host.scrollHeight;return;}
+  _chatSub=true;
+  chatRef().limitToLast(200).on('value',sn=>{
+    const v=sn.val()||{}; const ks=Object.keys(v); const me=pfSess();
+    host.innerHTML=ks.length?ks.map(k=>{const m=v[k]||{};const mine=me&&m.uid===me.uid;const t=m.at?new Date(m.at).toLocaleString([], {hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'}):'';return '<div class="pmsg'+(mine?' mine':'')+'"><div><span class="who">'+esc(m.name||'Member')+'</span><span class="tm">'+esc(t)+'</span></div><div class="tx">'+esc(m.text||'')+'</div></div>';}).join(''):'<div style="color:var(--tx3)">No messages yet — say hi 👋</div>';
+    host.scrollTop=host.scrollHeight;
+  },e=>{_chatSub=false;host.innerHTML='<div style="color:var(--red)">Chat unavailable: '+esc(e.message)+'</div>';});
+}
+window.renderChat=renderChat;
+document.getElementById('chatForm').addEventListener('submit',function(e){
+  e.preventDefault();
+  const inp=document.getElementById('chatText');const text=(inp.value||'').trim();if(!text)return;
+  const s=pfSess(); if(!s.uid){alert('Sign in to chat.');return;}
+  inp.value='';
+  chatRef().push({uid:s.uid,name:s.name||currentUser||'Member',text:text,at:Date.now()}).catch(err=>{inp.value=text;alert('Could not send: '+err.message);});
+});
 
 // ═══════════════════════════════════════════════════
 //  HELPERS
@@ -2516,10 +2698,15 @@ if(_dashForgot){
   });
 }
 
+// Boot loader control
+function hideBoot(){ const b=document.getElementById('bootLoader'); if(b) b.classList.add('hide'); }
+// Safety: never let the loader hang past 5s.
+setTimeout(hideBoot, 5000);
+
 // Auto-restore session on reload.
 firebase.auth().onAuthStateChanged(async user=>{
-  if(!user) return;
-  if(currentUser) return; // already logged in for this page lifecycle
+  if(!user){ hideBoot(); return; }   // anonymous → reveal login screen
+  if(currentUser){ hideBoot(); return; } // already logged in for this page lifecycle
   try{
     const account=await ExplabAuth.init().db.ref('accounts/'+user.uid).once('value').then(s=>s.val());
     const name=(account&&account.displayName)||(user.displayName)||(user.email||'Member');
