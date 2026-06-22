@@ -1223,25 +1223,25 @@ function notifyInitAdmin(){
   // new members
   Notify.watchNew(db.ref('members'), function(k,v){
     var nm=(v&&v.identity&&v.identity.name)||(v&&v.name)||'New member';
-    return {title:'New member', body:nm};
+    return {title:'New member', body:nm, onClick:function(){ sv('directory'); }};
   });
   // new waitlist signups (for the active event; admin-added ones skipped)
   db.ref('siteConfig/activeEventId').once('value').then(function(s){
     var ev=s.val()||WL_EVENT;
     Notify.watchNew(db.ref('waitlist/'+ev), function(k,v){
       if(v&&v.addedBy) return null;
-      return {title:'New waitlist signup', body:(v&&v.email)||''};
+      return {title:'New waitlist signup', body:(v&&v.email)||'', onClick:function(){ sv('waitlist'); }};
     });
   }).catch(function(){});
   // new events
   Notify.watchNew(db.ref('events'), function(k,v){
     var t=v&&v.type?(v.type.charAt(0).toUpperCase()+v.type.slice(1)):'Event';
-    return {title:'New event', body:t+' #'+((v&&v.number)||'')};
+    return {title:'New event', body:t+' #'+((v&&v.number)||''), onClick:function(){ sv('events'); }};
   });
   // new chat messages (not my own)
   Notify.watchNew(db.ref('chat/general'), function(k,v){
     if(!v||v.uid===me.uid) return null;
-    return {title:'New message — '+(v.name||'Member'), body:v.text||''};
+    return {title:'New message — '+(v.name||'Member'), body:v.text||'', onClick:function(){ sv('chat'); }};
   });
 }
 function logout(){
@@ -1409,6 +1409,16 @@ function setupDrop(){
 function toggleNav(){ document.body.classList.toggle('nav-open'); }
 function closeNav(){ document.body.classList.remove('nav-open'); }
 window.toggleNav=toggleNav; window.closeNav=closeNav;
+(function(){ // drag from the left edge to open the drawer; swipe left to close
+  var sx=0,sy=0,track=false;
+  document.addEventListener('touchstart',function(e){var t=e.touches[0];sx=t.clientX;sy=t.clientY;track=(sx<28)||document.body.classList.contains('nav-open');},{passive:true});
+  document.addEventListener('touchmove',function(e){
+    if(!track)return; var t=e.touches[0],dx=t.clientX-sx,dy=t.clientY-sy;
+    if(Math.abs(dx)<Math.abs(dy))return;
+    if(dx>55&&!document.body.classList.contains('nav-open')){document.body.classList.add('nav-open');track=false;}
+    else if(dx<-55&&document.body.classList.contains('nav-open')){document.body.classList.remove('nav-open');track=false;}
+  },{passive:true});
+})();
 function sv(name,btn){
   document.body.classList.remove('nav-open'); // close mobile drawer on selection
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));

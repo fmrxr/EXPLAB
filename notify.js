@@ -11,6 +11,21 @@
 
   function esc(s){ return String(s == null ? '' : s)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  // EXPLAB brand icon (green ⵣ square) rendered to a PNG for OS notification popups.
+  var _icon = null;
+  function brandIcon(){
+    if(_icon !== null) return _icon;
+    try{
+      var c=document.createElement('canvas'); c.width=96; c.height=96;
+      var x=c.getContext('2d');
+      x.fillStyle='#3feb03'; x.fillRect(0,0,96,96);
+      x.fillStyle='#000'; x.font='700 74px system-ui,Segoe UI,sans-serif';
+      x.textAlign='center'; x.textBaseline='middle'; x.fillText('ⵣ',48,56);
+      _icon=c.toDataURL('image/png');
+    }catch(e){ _icon=''; }
+    return _icon;
+  }
   function timeAgo(ts){ var s=Math.floor((Date.now()-ts)/1000);
     if(s<60)return 'just now'; if(s<3600)return Math.floor(s/60)+'m ago';
     if(s<86400)return Math.floor(s/3600)+'h ago'; return new Date(ts).toLocaleDateString(); }
@@ -46,9 +61,10 @@
     if(!h){ h=document.createElement('div'); h.id='ntfToasts'; h.className='ntf-toasts'; document.body.appendChild(h); }
     return h;
   }
-  function showToast(title,body){
+  function showToast(title,body,onClick){
     var d=document.createElement('div'); d.className='ntf-toast';
     d.innerHTML='<div class="t">'+esc(title)+'</div>'+(body?'<div class="b">'+esc(body)+'</div>':'');
+    if(onClick){ d.style.cursor='pointer'; d.addEventListener('click',function(){ try{onClick();}catch(e){} d.remove(); }); }
     toastHost().appendChild(d);
     setTimeout(function(){ d.style.transition='opacity .3s'; d.style.opacity='0'; setTimeout(function(){ d.remove(); },300); }, 5000);
   }
@@ -56,8 +72,8 @@
   function renderBell(){
     if(badgeEl){ badgeEl.textContent=unread>9?'9+':String(unread); badgeEl.style.display=unread?'block':'none'; }
     if(dropEl){
-      var rows=list.length ? list.slice(0,40).map(function(n){
-        return '<div class="ntf-item"><div class="t">'+esc(n.title)+'</div>'+
+      var rows=list.length ? list.slice(0,40).map(function(n,i){
+        return '<div class="ntf-item" data-i="'+i+'"'+(n.onClick?' style="cursor:pointer"':'')+'><div class="t">'+esc(n.title)+'</div>'+
           (n.body?'<div class="b">'+esc(n.body)+'</div>':'')+
           '<div class="tm">'+timeAgo(n.at)+'</div></div>';
       }).join('') : '<div class="ntf-empty">No notifications yet.</div>';
@@ -68,14 +84,16 @@
   }
 
   N.fire=function(o){
-    o=o||{}; var title=o.title||'Notification', body=o.body||'';
-    list.unshift({title:title,body:body,at:Date.now()});
+    o=o||{}; var title=o.title||'Notification', body=o.body||'', onClick=o.onClick||null;
+    list.unshift({title:title,body:body,at:Date.now(),onClick:onClick});
     if(list.length>80) list.length=80;
     unread++;
     renderBell();
-    showToast(title,body);
+    showToast(title,body,onClick);
     try{ if(window.Notification && Notification.permission==='granted'){
-      var n=new Notification(title,{body:body}); setTimeout(function(){ try{n.close();}catch(e){} },6000);
+      var n=new Notification(title,{body:body,icon:brandIcon()||undefined});
+      if(onClick) n.onclick=function(){ try{window.focus();onClick();}catch(e){} n.close(); };
+      setTimeout(function(){ try{n.close();}catch(e){} },6000);
     } }catch(e){}
   };
 
@@ -105,6 +123,12 @@
     dropEl=document.createElement('div'); dropEl.className='ntf-drop'; dropEl.id='ntfDrop';
     document.body.appendChild(dropEl);
     bellEl.addEventListener('click',function(e){ e.stopPropagation(); toggleDrop(); });
+    dropEl.addEventListener('click',function(e){
+      var it=e.target.closest('.ntf-item'); if(!it) return;
+      var n=list[+it.getAttribute('data-i')];
+      dropEl.classList.remove('open');
+      if(n && n.onClick) try{ n.onClick(); }catch(_){}
+    });
     document.addEventListener('click',function(e){
       if(dropEl.classList.contains('open') && !dropEl.contains(e.target) && e.target!==bellEl) dropEl.classList.remove('open');
     });
