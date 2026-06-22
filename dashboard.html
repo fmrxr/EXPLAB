@@ -10,6 +10,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="auth.js"></script>
 <script src="chat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Courier+Prime:wght@400;700&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
@@ -1376,6 +1377,22 @@ function sv(name,btn){
 // ═══════════════════════════════════════════════════
 let WL_EVENT='workshop-001';
 let _wlCache={}, _attCache={}, _accts={}, _wlSubscribed=false, _wlError=null;
+// EmailJS — confirmation email sent to the attendee when an admin confirms them.
+const EJS={pub:'iJI95atBsh6B4S1p1',service:'explab-cards',confirmTpl:'template_1yjrc0n'};
+try{ if(window.emailjs) emailjs.init({publicKey:EJS.pub}); }catch(_){}
+function sendConfirmEmail(toEmail,toName){
+  if(!toEmail||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(toEmail))||!window.emailjs) return Promise.resolve(false);
+  return (db||firebase.database()).ref('events/'+WL_EVENT).once('value').then(s=>{
+    const ev=s.val()||{};
+    const name=(ev.type==='gathering'?'Gathering':'Workshop')+' #'+(ev.number||'');
+    const date=[ev.date?new Date(ev.date+'T00:00:00').toLocaleDateString('en-GB',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}):'',ev.timeRange].filter(Boolean).join(' · ');
+    return emailjs.send(EJS.service,EJS.confirmTpl,{
+      to_email:String(toEmail), to_name:toName||'there',
+      event_name:name, event_date:date, event_location:ev.location||'',
+      message:'Your spot for '+name+' is confirmed. See you there!'
+    });
+  }).then(()=>true).catch(e=>{ console.warn('confirm email:',e&&(e.text||e.message)); return false; });
+}
 function wlRef(){return (db||firebase.database()).ref('waitlist/'+WL_EVENT);}
 function attEvRef(){return (db||firebase.database()).ref('attendees/'+WL_EVENT);}
 const wlValid=e=>/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(e||'').trim());
@@ -1444,11 +1461,12 @@ function wlAdd(){
 // Confirm a site signup: mark it confirmed AND create a PII-free counter token so the
 // public "~N attending" counter (which reads attendees) reflects it.
 function wlConfirm(k){
-  const e=_wlCache[k]||{}; const d=db||firebase.database();
+  const e=_wlCache[k]||{};
   Promise.all([
     wlRef().child(k).update({confirmed:true}),
     attEvRef().child('wl_'+k).set({at:e.at||Date.now(),status:'confirmed'})
-  ]).then(()=>{showToast('Confirmed ✓');logEv(currentUser||'admin','waitlist','Confirmed '+(e.email||k));})
+  ]).then(()=> sendConfirmEmail(e.email,e.name) )
+   .then(sent=>{showToast(sent?'Confirmed & emailed ✓':'Confirmed ✓ (email not sent)');logEv(currentUser||'admin','waitlist','Confirmed '+(e.email||k));})
    .catch(e=>showToast('Confirm failed: '+e.message));
 }
 function wlDelete(k){
@@ -1462,7 +1480,8 @@ function wlDelete(k){
 function attConfirm(uid){
   const a=_accts[uid]||{};
   attEvRef().child(uid).update({status:'confirmed'})
-    .then(()=>{showToast('Confirmed ✓');logEv(currentUser||'admin','attendees','Confirmed '+(a.email||uid));})
+    .then(()=> sendConfirmEmail(a.email,a.displayName) )
+    .then(sent=>{showToast(sent?'Confirmed & emailed ✓':'Confirmed ✓ (email not sent)');logEv(currentUser||'admin','attendees','Confirmed '+(a.email||uid));})
     .catch(e=>showToast('Confirm failed: '+e.message));
 }
 function attDelete(uid){
