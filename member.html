@@ -362,10 +362,13 @@ function eventCard(id,e){
   const going=!!myStatus;
   const prog=(Array.isArray(e.program)?e.program:[]).slice(0,4).map(p=>'<div style="font-size:12px;color:var(--tx3);padding:.15rem 0">'+(p.time?'<b style="color:var(--tx2)">'+esc(p.time)+'</b> — ':'')+esc(p.label||'')+'</div>').join('');
   const meta=[fmtDate(e.date),e.timeRange,e.location].filter(Boolean).join(' · ');
+  const _pn=String(e.number||'').replace(/[^0-9]/g,'');
+  const poster=(e.type==='workshop'&&_pn)?'<img src="img/workshop-'+_pn.padStart(3,'0')+'.jpg" alt="'+esc(cap(e.type)+' #'+(e.number||''))+' poster" onerror="this.style.display=\'none\'" loading="lazy" style="width:100%;display:block;border:1px solid var(--bdr);border-radius:2px;margin:.2rem 0 .7rem;background:#fff">':'';
   return '<div class="card" style="border-left:3px solid '+accent+'">'+
     '<div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:'+accent+';font-family:\'Courier Prime\',monospace">'+esc(e.type||'')+'</div>'+
     '<div style="font-size:18px;font-weight:700;margin:.25rem 0">'+esc(cap(e.type))+' #'+esc(e.number||'')+'</div>'+
     '<div style="font-size:12px;color:var(--tx3);margin-bottom:.6rem">'+esc(meta)+'</div>'+
+    poster+
     '<div style="font-size:11px;font-family:\'Courier Prime\',monospace;color:'+accent+';margin-bottom:.6rem;letter-spacing:.04em">◆ ~'+(ATT_COUNTS[id]||0)+' attending'+(e.capacity?(' / '+e.capacity):'')+'</div>'+
     (e.description?'<div style="font-size:13px;color:var(--tx2);line-height:1.6;margin-bottom:.6rem">'+esc(e.description)+'</div>':'')+
     prog+
