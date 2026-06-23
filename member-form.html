@@ -647,10 +647,21 @@ function getDB(){
   }catch(e){console.warn('Firebase:',e.message);}
   return _db;
 }
+function sanitizeFirebaseKeys(obj){
+  if(obj===null||typeof obj!=='object'||Array.isArray(obj))return obj;
+  const out={};
+  Object.entries(obj).forEach(([k,v])=>{
+    // Replace any character invalid in Firebase keys: . # $ / [ ]
+    const safe=k.replace(/[.#$\/\[\]]/g,'_');
+    out[safe]=sanitizeFirebaseKeys(v);
+  });
+  return out;
+}
 function pushToFirebase(d){
   const db=getDB();if(!db)return Promise.resolve();
   const key=(d.identity?.name||'member').replace(/[^a-z0-9]/gi,'_').toLowerCase()+'_'+Date.now();
-  return db.ref('members/'+key).set(d)
+  const safeData=sanitizeFirebaseKeys(d);
+  return db.ref('members/'+key).set(safeData)
     .then(()=>{return key;})
     .catch(e=>{console.warn('Firebase write:',e);throw e;});
 }
