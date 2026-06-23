@@ -101,8 +101,9 @@ html,body{min-height:100vh;background:var(--blk);color:var(--tx);font-family:'Sp
   text-transform:uppercase;padding:.7rem 1rem;cursor:pointer}
 
 /* ══ TOP BAR ══ */
-.topbar{background:var(--s1);border-bottom:1px solid var(--bdr);position:sticky;top:0;z-index:90;
+.topbar{background:var(--s1);border-bottom:1px solid var(--bdr);position:fixed;top:0;left:0;right:0;z-index:100;
   display:none;align-items:center;justify-content:space-between;padding:.7rem 1.5rem}
+#appBody{margin-top:45px}
 .tb-left{display:flex;align-items:center;gap:1rem}
 .tb-logo{font-size:14px;font-weight:700;color:var(--or);letter-spacing:-.01em}
 .ub{display:flex;align-items:center;gap:.4rem;background:rgba(235,101,3,.1);border:1px solid var(--bdr2);
