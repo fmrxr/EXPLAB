@@ -11,6 +11,7 @@
 <script src="auth.js"></script>
 <script src="chat.js"></script>
 <script src="notify.js"></script>
+<script src="theme.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Courier+Prime:wght@400;700&display=swap');
@@ -125,6 +126,10 @@ html,body{min-height:100vh;background:var(--blk);color:var(--tx);font-family:'Sp
 #navToggle{display:none;background:transparent;border:1px solid var(--bdr);color:var(--or);font-size:16px;line-height:1;padding:4px 10px;cursor:pointer;border-radius:2px}
 #navToggle:hover{border-color:var(--bdr2)}
 #navScrim{display:none}
+.acc-toggle{display:flex;gap:5px;align-items:center;margin-right:.5rem}
+.acc-sw{width:16px;height:16px;border-radius:50%;border:1px solid rgba(255,255,255,.3);cursor:pointer;padding:0;transition:transform .12s}
+.acc-sw:hover{transform:scale(1.18)}
+.acc-sw.on{box-shadow:0 0 0 2px var(--blk),0 0 0 3px #fff}
 
 /* ══ LAYOUT ══ */
 .layout{display:none;min-height:calc(100vh - 45px)}
@@ -651,6 +656,10 @@ textarea.pf-in{resize:vertical;line-height:1.5}
     </div>
   </div>
   <div class="tb-right">
+    <div class="acc-toggle" title="Site accent color">
+      <button class="acc-sw" data-c="#3feb03" style="background:#3feb03" onclick="setAccent('#3feb03')" title="Green" aria-label="Green accent"></button>
+      <button class="acc-sw" data-c="#eb6503" style="background:#eb6503" onclick="setAccent('#eb6503')" title="Orange" aria-label="Orange accent"></button>
+    </div>
     <div class="fbst"><div class="fbd" id="fbDot"></div><span id="fbLbl" style="color:var(--tx3)">Offline</span></div>
     <button class="tbb" onclick="toggleAct()">⟳ <span class="tbb-l">Activity</span></button>
     <button class="tbb" onclick="logout()">← <span class="tbb-l">Sign out</span></button>
@@ -1207,6 +1216,7 @@ function finishLogin(name,guest=false){
   logEv(name,'login','Authenticated');
   renderLog();
   initFirebase();
+  if(window.watchTheme) watchTheme();
   if(isAdmin) notifyInitAdmin();
   setTimeout(()=>{
     const av=document.querySelector('.view.active');
@@ -1216,10 +1226,22 @@ function finishLogin(name,guest=false){
     }
   },150);
 }
+function setAccent(hex){
+  if(window.applyTheme) applyTheme(hex);
+  document.querySelectorAll('.acc-sw').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-c')===hex); });
+  (db||firebase.database()).ref('siteConfig/themeAccent').set(hex)
+    .then(function(){ if(typeof showToast==='function') showToast('Accent updated ✓'); })
+    .catch(function(e){ if(typeof showToast==='function') showToast('Save failed: '+e.message); });
+}
+window.setAccent=setAccent;
 var _notifyDone=false;
 function notifyInitAdmin(){
   if(_notifyDone || !window.Notify) return; _notifyDone=true;
   var me=ExplabAuth.getSession()||{};
+  // keep the accent swatches in sync with the saved value
+  (db||firebase.database()).ref('siteConfig/themeAccent').on('value',function(s){
+    var v=s.val(); document.querySelectorAll('.acc-sw').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-c')===v); });
+  },function(){});
   Notify.mountBell(document.querySelector('.tb-right'));
   // new members
   Notify.watchNew(db.ref('members'), function(k,v){
@@ -1604,7 +1626,7 @@ function evPaint(){
   const keys=Object.keys(v).sort((a,b)=>((v[b]||{}).createdAt||0)-((v[a]||{}).createdAt||0));
   host.innerHTML = keys.length ? keys.map(k=>{
     const e=v[k]||{}; const isA=k===_evActiveId;
-    const accent=e.type==='gathering'?'#eb6503':'#3feb03';
+    const accent='var(--or)';
     const _pn=String(e.number||'').replace(/[^0-9]/g,'');
     const poster=(e.type==='workshop'&&_pn)?`<img src="img/workshop-${_pn.padStart(3,'0')}.jpg" alt="poster" onerror="this.style.display='none'" loading="lazy" style="width:100%;display:block;border:1px solid var(--bdr);border-radius:2px;margin:.2rem 0 .5rem;background:#fff">`:'';
     return `<div class="admin-section" style="border-left:3px solid ${accent};margin:0">
